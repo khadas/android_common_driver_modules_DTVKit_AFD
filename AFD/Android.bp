@@ -1,0 +1,34 @@
+
+cc_library_shared {
+	name: "libafd_module",
+    compile_multilib: "32",
+
+    arch: {
+        x86: {
+            enabled: false,
+        },
+        x86_64: {
+            enabled: false,
+        },
+    },
+
+	srcs: [
+		"AFDparse.c",
+		"vtc.c",
+	],
+	
+	cflags: [
+        "-fPIC",
+        "-fsigned-char",
+        "-D_POSIX_SOURCE",
+		"-Wno-unused-parameter",
+		"-Wno-unused-value",
+		"-Wno-unused-function",
+        "-DANDROID_PLATFORM_SDK_VERSION=29",
+        "-DSOURCE_DETECT_ENABLE"
+    ],
+	
+	ldflags: ["-shared"],
+	 
+	proprietary: true,
+}
