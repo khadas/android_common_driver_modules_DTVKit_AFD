@@ -14,7 +14,7 @@
 #CROSS_COMPILE ?= aarch64-linux-gnu-
 #endif
 
-AFD_IN=vendor/amlogic/common/afd_module
+AFD_IN=vendor/amlogic/common/external/DTVKit/AFD
 AFD_OUT=$(PRODUCT_OUT)/obj/afd_module
 
 define afd-module
