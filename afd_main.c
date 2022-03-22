@@ -22,6 +22,7 @@
 #include <linux/uaccess.h>
 #include <linux/version.h>
 #include <linux/vmalloc.h>
+#include <linux/slab.h>
 
 #include "AFD/AFDparse.h"
 #include "AFD/vtc.h"
