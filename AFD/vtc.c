@@ -262,13 +262,6 @@ static S_VT_FRACT_RECT MakeRectangle(S32BIT left, S32BIT top, S32BIT width,
  * FUNCTION DEFINITIONS *
  ************************/
 
-/*!**************************************************************************
- * @brief    Open video transformation manager
- * @param    options - transformation manager options
- * @return   Pointer to manager context, NULL if cannot be created
- ****************************************************************************/
-static S_VT_CONVERSION_STATE state;
-
 void VT_Enter(void *context) {
     S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
     if (state != NULL) {
@@ -281,12 +274,12 @@ void VT_Leave(void *context) {
     S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
     if (state != NULL) {
         state->afd_enabled = FALSE;
-        state->afd = 0xFF;
+        state->afd = 0;
     }
 }
 
-void *VT_Open() {
-    S_VT_CONVERSION_STATE *new_state = &state;
+void VT_Rest(S_VT_CONVERSION_STATE* vtc) {
+    S_VT_CONVERSION_STATE *new_state = vtc;
 
     if (new_state != NULL) {
         new_state->afd_enabled = FALSE;
@@ -295,7 +288,7 @@ void *VT_Open() {
 
         new_state->afd_preference = AFD_PREFERENCE_AUTO;
         new_state->alignment = ASPECT_MODE_AUTO;
-        new_state->afd = 0xFF;
+        new_state->afd = 0;//default is 0 for aspect auto
         new_state->mheg_aspect_ratio = ASPECT_UNDEFINED;
         new_state->mheg_wam = ASPECT_MODE_4_3;
 
@@ -327,19 +320,6 @@ void *VT_Open() {
 
         InitRect(&new_state->input_rectangle, 0, 0, SD_WIDTH, SD_HEIGHT);
         InitRect(&new_state->output_rectangle, 0, 0, SD_WIDTH, SD_HEIGHT);
-    }
-    return new_state;
-}
-
-/*!**************************************************************************
- * @brief    Close video transformation manager
- * @param    context - transformation calculator context
- ****************************************************************************/
-void VT_Close(void *context) {
-    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
-    if (state != NULL) {
-        state->afd_enabled = FALSE;
-        state->scaling_mode = SCALING_NONE;
     }
 }
 
@@ -438,16 +418,13 @@ void VT_SetMhegScaling(void *context, S_RECTANGLE *scaling) {
     S_VT_CONVERSION_STATE *state;
 
     ASSERT(context != NULL);
-    if (context == NULL || scaling == NULL) return;
+    if (context == NULL) return;
 
     state = (S_VT_CONVERSION_STATE *)context;
 
-    if (scaling == NULL) {
-        state->mheg_scaling_given = FALSE;
-    } else {
-        state->mheg_scaling_given = TRUE;
-        state->mheg_scaling_rect = *scaling;
-    }
+    state->mheg_scaling_given = TRUE;
+    state->mheg_scaling_rect = *scaling;
+
     if (state->scaling_mode == SCALING_MHEG) state->settings_changed = TRUE;
 }
 
@@ -2103,10 +2080,12 @@ static S_VT_FRACT_RECT MakeRectangle(S32BIT left, S32BIT top, S32BIT width,
 }
 
 void VT_SetScalingMode(void *context, E_APP_SCALING_TYPE type){
+    S_VT_CONVERSION_STATE *state;
+
     if (context == NULL) return;
     if (type > SCALING_MHEG) type = SCALING_NONE;
 
-    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+    state = (S_VT_CONVERSION_STATE *)context;
     if (state->scaling_mode != type) {
         state->scaling_mode = type;
         if (type == SCALING_APP) {
@@ -2121,12 +2100,13 @@ void VT_SetScalingMode(void *context, E_APP_SCALING_TYPE type){
 void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
                E_ASPECT_RATIO frame_aspectratio, U8BIT afd_value) {
     BOOLEAN changed = FALSE;
+    S_VT_CONVERSION_STATE *state;
     U8BIT afd_new = afd_value & 0x07;
     //E_ASPECT_RATIO dis_aspect;
 
     if (context == NULL) return;
 
-    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+    state = (S_VT_CONVERSION_STATE *)context;
     if (state->video_width != frame_info->video_width) {
         state->video_width = frame_info->video_width;
         changed = TRUE;
@@ -2167,33 +2147,36 @@ void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
 
 S_RECTANGLE getInrectangle(void *context) {
     S_RECTANGLE input;
+    S_VT_CONVERSION_STATE *state;
     InitRect(&input, 0, 0, 0, 0);
 
     if (context == NULL) return input;
 
-    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+    state = (S_VT_CONVERSION_STATE *)context;
     input = state->input_rectangle;
     return input;
 }
 
 S_RECTANGLE getOutrectangle(void *context) {
     S_RECTANGLE output;
+    S_VT_CONVERSION_STATE *state;
     InitRect(&output, 0, 0, 0, 0);
 
     if (context == NULL) return output;
 
-    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+    state = (S_VT_CONVERSION_STATE *)context;
     output = state->output_rectangle;
     return output;
 }
 
 S_RECTANGLE getScalingRect(void *context) {
     S_RECTANGLE scaling;
+    S_VT_CONVERSION_STATE *state;
     InitRect(&scaling, 0, 0, 0, 0);
 
     if (context == NULL) return scaling;
 
-    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+    state = (S_VT_CONVERSION_STATE *)context;
     if (state->scaling_mode == SCALING_NONE) {
         return scaling;
     } else if (state->scaling_mode == SCALING_APP) {
@@ -2236,7 +2219,7 @@ BOOLEAN checkInScaling(void *context) {
     S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
 
     if (state && state->afd_enabled) {
-        if (state->afd != 0xFF && state->alignment == ASPECT_MODE_AUTO)
+        if (state->alignment == ASPECT_MODE_AUTO)
             return TRUE;
         if (state->scaling_mode == SCALING_APP
             && (state->app_scaling_window.width != 0)
@@ -2254,3 +2237,29 @@ BOOLEAN checkInScaling(void *context) {
     return FALSE;
 }
 
+void print_vt_state(void *context, char* buf, int count) {
+    S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+    snprintf(buf, count, "  enable : %d\n"
+                         "  aspect : %d(0 auto, 1 4:3, 2 16:9, 3 14:9, 4 zoom, 5:cus)\n"
+                         "  value  : %d\n"
+                         "  type   : %d(0 none, 1 app, 2 hbbtv, 3 mheg)\n"
+                         "  scaling: %d %d %d %d\n"
+                         "  video  : %d %d\n"
+                         "  screen : %d %d\n"
+                         "  vaspect: %d(0 4:3, 1 16:9 255 und)\n"
+                         "  v out  : %d %d %d %d\n"
+                         "  dis out: %d %d %d %d\n",
+                         state->afd_enabled,
+                         state->alignment,
+                         state->afd,
+                         state->scaling_mode,
+                         getScalingRect(state).left, getScalingRect(state).top,
+                         getScalingRect(state).width, getScalingRect(state).height,
+                         state->video_width, state->video_height,
+                         state->screen_width, state->screen_height,
+                         state->video_aspect_ratio,
+                         state->input_rectangle.left, state->input_rectangle.top,
+                         state->input_rectangle.width, state->input_rectangle.height,
+                         state->output_rectangle.left, state->output_rectangle.top,
+                         state->output_rectangle.width, state->output_rectangle.height);
+}

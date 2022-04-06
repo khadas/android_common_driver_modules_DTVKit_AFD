@@ -293,7 +293,7 @@ struct CCData {
 };
 
 static void aml_swap_data(uint8_t *user_data, int ud_size);
-uint8_t processData(uint8_t *rawData);
+uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
 userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len);
 uint8_t processMpegData(uint8_t *data, int len);
 uint8_t processH264Data(uint8_t *data, int len);
@@ -301,8 +301,10 @@ uint8_t processH264Data(uint8_t *data, int len);
 /*!**************************************************************************
  * @brief    get afd value
  * @param    rawdata - user data include afd info
+ * @Param    inst_id - pionter to store inst_id
+ * @Param    vpts    - pionter to store vpts
  * @return afd value ,if return 255 , means can't get afd value
  ****************************************************************************/
-uint8_t getaf(uint8_t *rawData);
+uint8_t getaf(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
 
 #endif  // AMCODEC_USERDATA_DEVICE_H

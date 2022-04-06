@@ -40,6 +40,7 @@ typedef struct s_vt_options {
     BOOLEAN mheg_required;
     BOOLEAN afd_required;
     BOOLEAN hbbtv_required;
+    U8BIT path;
 } S_VT_OPTIONS;
 
 typedef void (*F_VT_NOTIFICATION_CALLBACK)(void *userdata);
@@ -195,17 +196,7 @@ typedef struct s_conversion_state {
 
 void VT_Enter(void *context);
 void VT_Leave(void *context);
-/*!**************************************************************************
- * @brief    Open video transformation manager
- * @return   Pointer to manager context, NULL if cannot be created
- ****************************************************************************/
-void *VT_Open(void);
-
-/*!**************************************************************************
- * @brief    Close video transformation manager
- * @param    context - transformation calculator context
- ****************************************************************************/
-void VT_Close(void *context);
+void VT_Rest(S_VT_CONVERSION_STATE* vtc);
 
 /*!**************************************************************************
  * @brief    Set MHEG5 scene aspect ratio
@@ -312,6 +303,7 @@ S_RECTANGLE getScalingRect(void *context);
  * @param    context - transformation calculator context
  ****************************************************************************/
 BOOLEAN checkInScaling(void *context);
+void print_vt_state(void *context, char* buf, int count);
 
 
 #ifdef __cplusplus
