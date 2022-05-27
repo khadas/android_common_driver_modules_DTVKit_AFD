@@ -35,6 +35,8 @@
 #define SD_HEIGHT 576
 #define HD_WIDTH 1280
 #define HD_HEIGHT 720
+#define FHD_WIDTH 1920
+#define FHD_HEIGHT 1080
 
 /*******************
  * STATIC DATA      *
@@ -639,6 +641,8 @@ static E_FORMAT_CONVERSION GetVideoTransformation(S_VT_CONVERSION_STATE *state,
         VTC_AppScaling(state, clip_transform);
         DBG(("VTC_AppScaling:\n"));
         PrintMatrix(transform);
+        VTC_ToScreen(state, transform);
+        VTC_ToScreen(state, clip_transform);
     } else if (state->scaling_mode == SCALING_HBBTV) {
         VTC_HbbScaleToScreen(state, transform);
         VTC_HbbScaleToScreen(state, clip_transform);
@@ -1962,8 +1966,8 @@ static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
 
 static void UpdateResolution(S_VT_CONVERSION_STATE *state) {
     if (state->scaling_mode == SCALING_APP) {
-        state->resolution_width = state->screen_width;
-        state->resolution_height = state->screen_height;
+        state->resolution_width = FHD_WIDTH;
+        state->resolution_height = FHD_HEIGHT;
     } else if (state->scaling_mode == SCALING_MHEG) {
         state->resolution_width = state->mheg_resolution_width;
         state->resolution_height = state->mheg_resolution_height;
