@@ -23,6 +23,7 @@
 #include <linux/version.h>
 #include <linux/vmalloc.h>
 #include <linux/slab.h>
+#include <linux/compat.h>
 
 #include "AFD/AFDparse.h"
 #include "AFD/vtm.h"
