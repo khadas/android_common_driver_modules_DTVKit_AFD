@@ -11,6 +11,7 @@
 #include "vtm.h"
 
 static VT_NODE_t head;
+static E_VIDEO_ASPECT_MODE mAspectMode = ASPECT_MODE_CUSTOM;
 
 void init_vt_context(void) {
     head.path = -1;
@@ -25,6 +26,7 @@ void* create_vtc(int path) {
         vt->path = path;
         vt->inst_id = 0;
         VT_Rest(&(vt->vtc));
+        vt->vtc.alignment = mAspectMode;
         //INIT_LIST_HEAD(&(vt->node));
         list_add_tail(&(vt->node), &(head.node));
         return vt;
@@ -83,6 +85,20 @@ void* next_vtc(void* vt_context) {
         return list_entry(n, typeof(*v), node);
     }
     return NULL;
+}
+
+void apply_aspect(int mode) {
+    VT_NODE_t *v = NULL;
+    struct list_head *s = &(head.node);
+
+    if (mode >= ASPECT_MODE_AUTO && mode <= ASPECT_MODE_CUSTOM) {
+        mAspectMode = mode;
+        list_for_each_entry(v, s, node) {
+            if (v) {
+                VT_SetVideoAlignmentPref(&(v->vtc), mode);
+            }
+        }
+    }
 }
 
 void print_m5_res(char *buf, int count) {

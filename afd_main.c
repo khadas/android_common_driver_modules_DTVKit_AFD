@@ -505,21 +505,10 @@ static ssize_t aspect_mode_show(struct class *cla, struct class_attribute *attr,
 
 static ssize_t aspect_mode_store(struct class *cla, struct class_attribute *attr,
                              const char *buf, size_t size) {
-    unsigned int val;
     int parsed[2];
 
     if (likely(parse_para(buf, 2, parsed) == 2)) {
-        int path = parsed[0];
-        VT_NODE_t *vt = find_vtc(path);
-        if (!vt) {
-            vt = create_vtc(path);
-        }
-        S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
-        if (vt_context) {
-            val = parsed[1];
-            if (val <= ASPECT_MODE_CUSTOM)
-                VT_SetVideoAlignmentPref(vt_context, val);
-        }
+        apply_aspect(parsed[1]);
     }
 
     return size;

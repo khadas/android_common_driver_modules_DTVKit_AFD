@@ -24,6 +24,7 @@ int release_vtc(int path);
 void* find_vtc(int path);
 void* find_vtc_inst(int inst_id);
 void* next_vtc(void* vt_context);
+void apply_aspect(int mode);
 
 void print_m5_res(char *buf, int count);
 void print_m5_aspect(char *buf, int count);
