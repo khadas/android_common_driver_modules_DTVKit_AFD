@@ -162,8 +162,8 @@ typedef enum {
 typedef enum {
     SCALING_NONE,
     SCALING_APP,
-    SCALING_HBBTV,
-    SCALING_MHEG
+    SCALING_MHEG,
+    SCALING_HBBTV
 } E_APP_SCALING_TYPE;
 
 typedef struct s_conversion_state {
@@ -198,51 +198,27 @@ void VT_Enter(void *context);
 void VT_Leave(void *context);
 void VT_Rest(S_VT_CONVERSION_STATE* vtc);
 
-/*!**************************************************************************
- * @brief    Set MHEG5 scene aspect ratio
- * @param    context - transformation calculator context
- * @param    aspect_ratio - scene aspect ratio
- ****************************************************************************/
-void VT_SetMhegAspectRatio(void *context, E_ASPECT_RATIO aspect_ratio);
-
-/*!**************************************************************************
- * @brief    Set Voyager scaling resolution
- * @param    context - transformation calculator context
- * @param    width
- * @param    height
- ****************************************************************************/
-void VT_SetMhegScalingResolution(void *context, U16BIT width, U16BIT height);
 
 /*!**************************************************************************
  * @brief    Set MHEG-5 scaling information
  * @param    context - transformation calculator context
  * @param    scaling - scaling and positioning transformation
+ * @Param    resolution_width
+ * @Param    resolution_height
  * @note     When scaling is NULL, scaling is ignored and the behaviour will
  *           be as if full screen video is mapped to the full screen.
  ****************************************************************************/
-void VT_SetMhegScaling(void *context, S_RECTANGLE *scaling);
+void VT_SetMhegScaling(void *context, S_RECTANGLE *scaling, int resolution_width, int resolution_height);
 
 /*!**************************************************************************
  * @brief    Set application scaling information
  * @param    context - transformation calculator context
  * @param    window - output window (screen CS)
+ * @Param    resolution_width
+ * @Param    resolution_height
  * @note     When window is NULL, application scaling is turned off
  ****************************************************************************/
-void VT_SetAppScaling(void *context, S_RECTANGLE *window);
-
-/*!**************************************************************************
- * @brief    Set HBBTV output window
- * @param    context - transformation calculator context
- * @param    output - window
- ****************************************************************************/
-void VT_SetHbbtvWindow(void *context, S_RECTANGLE *output);
-
-/*!**************************************************************************
- * @brief    Set widescreeen alignment mode for MHEG-5
- * @param    context - transformation calculator context
- * @param    wam - widescreen alignment mode
- ****************************************************************************/
-void VT_SetMhegVideoAlignment(void *context, E_VIDEO_ASPECT_MODE wam);
+void VT_SetAppScaling(void *context, S_RECTANGLE *window, int resolution_width, int resolution_height);
 
 /*!**************************************************************************
  * @brief    Set user preference for video aspect ratio
@@ -253,12 +229,11 @@ void VT_SetMhegVideoAlignment(void *context, E_VIDEO_ASPECT_MODE wam);
 void VT_SetVideoAlignmentPref(void *context, E_VIDEO_ASPECT_MODE alignment);
 
 /*!**************************************************************************
- * @brief    Handle AFD
- * @param    U16BIT video_width, U16BIT video_height, E_ASPECT_RATIO
- *frame_aspectratio, U8BIT afd_value
+ * @brief    Disable scaling mode
+ * @param    context - transformation calculator context
  * @return
  ****************************************************************************/
-void VT_SetScalingMode(void *context, E_APP_SCALING_TYPE type);
+void VT_DisableScalingMode(void *context);
 
 /*!**************************************************************************
  * @brief    get aspect ratio

@@ -34,9 +34,9 @@
 #define BUS_NAME "afd_module"
 #define CLS_NAME "afd_module"
 
-static struct device *afd_modue_dev;
+static struct device *afd_module_dev;
 
-static char afd_version_str[] = "AFD module: v2022.03.03a";
+static char afd_version_str[] = "AFD module: v2022.06.13a";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
 
@@ -76,34 +76,58 @@ static int parse_para(const char *para, int para_num, int *result) {
 }
 
 static void update_scaling_rect(const char *para) {
-    int parsed[5];
+    int parsed[8];
+    int path;
     S_RECTANGLE rect;
+    int scale_type;
+    int res_width, res_height;
 
-    if (likely(parse_para(para, 5, parsed) == 5)) {
+    if (likely(parse_para(para, 8, parsed) == 8)) {
         if (afd_debug_flag) {
-            pr_err("[AFD] receive scaling rect: [%d,%d,%d,%d,%d]",
-                   parsed[0], parsed[1], parsed[2],parsed[3],parsed[4]);
+            pr_err("[AFD] receive scaling rect: [%d,%d,[%d,%d,%d,%d],[%d,%d]]",
+                   parsed[0], parsed[1], parsed[2], parsed[3],parsed[4],
+                   parsed[5], parsed[6], parsed[7]);
         }
-        int path = parsed[0];
-        rect.left = parsed[1];
-        rect.top = parsed[2];
-        rect.width = parsed[3];
-        rect.height = parsed[4];
+        path = parsed[0];
+        scale_type = parsed[1];
+        rect.left = parsed[2];
+        rect.top = parsed[3];
+        rect.width = parsed[4];
+        rect.height = parsed[5];
+        res_width = parsed[6];
+        res_height = parsed[7];
         VT_NODE_t* vt = find_vtc(path);
         if (!vt) {
             vt = create_vtc(path);
         }
         S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
         if (vt_context) {
-            if (vt_context->scaling_mode == SCALING_APP) {
-                VT_SetAppScaling(vt_context, &rect);
-            } else if (vt_context->scaling_mode == SCALING_HBBTV) {
-                VT_SetHbbtvWindow(vt_context, &rect);
-            } else if (vt_context->scaling_mode == SCALING_MHEG) {
-                VT_SetMhegScaling(vt_context, &rect);
+            if (scale_type == SCALING_APP) {
+                VT_SetAppScaling(vt_context, &rect, res_width, res_height);
+            } else if (scale_type == SCALING_MHEG) {
+                VT_SetMhegScaling(vt_context, &rect, res_width, res_height);
+            } else {
+                VT_DisableScalingMode(vt_context);
             }
         } else {
             pr_err("[AFD]: %s- no %d exist\n", __func__, path);
+        }
+    } else if (parse_para(para, 8, parsed) == 2) {
+        //if two parameters passed, para[1] must 0
+        if (afd_debug_flag) {
+            pr_err("[AFD] receive scaling rect: [%d,%d]", parsed[0], parsed[1]);
+        }
+        path = parsed[0];
+        scale_type = parsed[1];
+        if (scale_type == 0) {
+            VT_NODE_t* vt = find_vtc(path);
+            if (!vt) {
+                vt = create_vtc(path);
+            }
+            S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
+            if (vt_context) {
+                VT_DisableScalingMode(vt_context);
+            }
         }
     }
 }
@@ -129,7 +153,11 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
 
     struct afd_handle_s *afd_h = (struct afd_handle_s *)handle;
 
-    if (!handle || !in || !out) return ret;
+    if (!handle || !in || !out) {
+        if (afd_debug_flag)
+            pr_err("[AFD] no handle, or no in or out info");
+        return ret;
+    }
 
     if (!in->ud_param) {
         if (afd_debug_flag)
@@ -261,103 +289,6 @@ static ssize_t debug_store(struct class *class, struct class_attribute *attr,
     return size;
 }
 
-static ssize_t m5_res_show(struct class *class, struct class_attribute *attr,
-                         char *buf) {
-    ssize_t size;
-    char tmp_buf[1024];
-
-    print_m5_res(tmp_buf, 1024);
-    size = sprintf(buf, "%s\n", tmp_buf);
-
-    return size;
-}
-
-static ssize_t m5_res_store(struct class *cla, struct class_attribute *attr,
-                             const char *buf, size_t count) {
-    int parsed[3];
-
-    if (likely(parse_para(buf, 3, parsed) == 3)) {
-        int path = parsed[0];
-        VT_NODE_t *vt = find_vtc(path);
-        if (!vt) {
-            vt = create_vtc(path);
-        }
-        S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
-        if (vt_context) {
-            VT_SetMhegScalingResolution(vt_context, parsed[1], parsed[2]);
-        } else {
-            pr_err("[AFD]: %s- no %d exist\n", __func__, path);
-        }
-    }
-    return strnlen(buf, count);
-}
-
-static ssize_t m5_aspect_show(struct class *class, struct class_attribute *attr,
-                          char *buf) {
-    ssize_t size;
-    char tmp_buf[1024];
-
-    print_m5_aspect(tmp_buf, 1024);
-    size = sprintf(buf, "%s\n", tmp_buf);
-
-    return size;
-}
-
-static ssize_t m5_aspect_store(struct class *class, struct class_attribute *attr,
-                           const char *buf, size_t size) {
-    int parsed[2];
-
-    if (likely(parse_para(buf, 2, parsed) == 2)) {
-        int path = parsed[0];
-        VT_NODE_t *vt = find_vtc(path);
-        if (!vt) {
-            vt = create_vtc(path);
-        }
-        S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
-        if (vt_context) {
-            VT_SetMhegAspectRatio(vt_context, parsed[1]);
-        } else {
-            pr_err("[AFD]: %s- no %d exist\n", __func__, path);
-        }
-    }
-
-    return size;
-}
-
-static ssize_t m5_wam_show(struct class *class, struct class_attribute *attr,
-                          char *buf) {
-    ssize_t size;
-    char tmp_buf[1024];
-
-    print_m5_wam(tmp_buf, 1024);
-    size = sprintf(buf, "%s\n", tmp_buf);
-
-    return size;
-}
-
-static ssize_t m5_wam_store(struct class *class, struct class_attribute *attr,
-                           const char *buf, size_t size) {
-    int parsed[2];
-
-    if (likely(parse_para(buf, 2, parsed) == 2)) {
-        int path = parsed[0];
-        VT_NODE_t *vt = find_vtc(path);
-        if (!vt) {
-            vt = create_vtc(path);
-        }
-        S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
-        if (vt_context) {
-            if (parsed[1] <= ASPECT_MODE_CUSTOM)
-                VT_SetMhegVideoAlignment(vt_context, parsed[1]);
-        } else {
-            pr_err("[AFD]: %s- no %d exist\n", __func__, path);
-        }
-    }
-
-    return size;
-}
-
-
 static ssize_t value_show(struct class *class, struct class_attribute *attr,
                           char *buf) {
     ssize_t size;
@@ -381,47 +312,6 @@ static ssize_t value_store(struct class *class, struct class_attribute *attr,
     //only support set in debug mode
     if (afd_debug_flag)
         afd_debug_value_flag = val;
-
-    return size;
-}
-
-static ssize_t type_show(struct class *class, struct class_attribute *attr,
-                         char *buf) {
-    ssize_t size = 0;
-    int scaling_type = SCALING_NONE;
-
-    //Only return the scaling type of main path for app using
-    //If want to debug other paths, please read "state"
-    VT_NODE_t *vt = find_vtc(0);
-    S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
-    if (vt_context)
-        scaling_type = vt_context->scaling_mode;
-
-    size = sprintf(buf, "%d\n", scaling_type);
-
-    return size;
-}
-
-static ssize_t type_store(struct class *class, struct class_attribute *attr,
-                          const char *buf, size_t size) {
-    unsigned int val;
-    int parsed[2];
-
-    if (likely(parse_para(buf, 2, parsed) == 2)) {
-        int path = parsed[0];
-        VT_NODE_t *vt = find_vtc(path);
-        if (!vt) {
-            vt = create_vtc(path);
-        }
-        S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
-        if (vt_context) {
-            val = parsed[1];
-            if (val <= SCALING_MHEG)
-                VT_SetScalingMode(vt_context, val);
-        } else {
-            pr_err("[AFD]: %s- no %d exist\n", __func__, path);
-        }
-    }
 
     return size;
 }
@@ -477,13 +367,7 @@ static ssize_t enable_store(struct class *class, struct class_attribute *attr,
 
 static ssize_t scaling_show(struct class *cla, struct class_attribute *attr,
                             char *buf) {
-    ssize_t size;
-    char tmp_buf[1024];
-
-    print_scaling_value(tmp_buf, 1024);
-    size = sprintf(buf, "%s\n", tmp_buf);
-
-    return size;
+    return 0;
 }
 
 static ssize_t scaling_store(struct class *cla, struct class_attribute *attr,
@@ -521,7 +405,7 @@ static ssize_t state_show(struct class *cla, struct class_attribute *attr,
 
     if (tmp_buf) {
         print_vt_states(tmp_buf, 10240);
-        size = sprintf(buf, "%s\n", tmp_buf);
+        size = sprintf(buf, "%s\n%s\n", afd_version_str, tmp_buf);
         kfree(tmp_buf);
     }
 
@@ -536,11 +420,7 @@ static ssize_t state_store(struct class *cla, struct class_attribute *attr,
 #if AFD_BUILD_4_9
 static struct class_attribute afd_module_class_attrs[] = {
     __ATTR(debug, 0664, debug_show, debug_store),
-    __ATTR(m5_res, 0664, m5_res_show, m5_res_store),
-    __ATTR(m5_aspect, 0664, m5_aspect_show, m5_aspect_store),
-    __ATTR(m5_wam, 0664, m5_wam_show, m5_wam_store),
     __ATTR(value, 0664, value_show, value_store),
-    __ATTR(type, 0664, type_show, type_store),
     __ATTR(enable, 0664, enable_show, enable_store),
     __ATTR(scaling, 0664, scaling_show, scaling_store),
     __ATTR(aspect_mode, 0664, aspect_mode_show, aspect_mode_store),
@@ -554,22 +434,14 @@ static struct class afd_module_class = {
 };
 #else
 static CLASS_ATTR_RW(debug);
-static CLASS_ATTR_RW(m5_res);
-static CLASS_ATTR_RW(m5_aspect);
-static CLASS_ATTR_RW(m5_wam);
 static CLASS_ATTR_RW(value);
-static CLASS_ATTR_RW(type);
 static CLASS_ATTR_RW(enable);
 static CLASS_ATTR_RW(scaling);
 static CLASS_ATTR_RW(aspect_mode);
 static CLASS_ATTR_RW(state);
 
 static struct attribute *afd_module_class_attrs[] = {&class_attr_debug.attr,
-                                                     &class_attr_m5_res.attr,
-                                                     &class_attr_m5_aspect.attr,
-                                                     &class_attr_m5_wam.attr,
                                                      &class_attr_value.attr,
-                                                     &class_attr_type.attr,
                                                      &class_attr_enable.attr,
                                                      &class_attr_scaling.attr,
                                                      &class_attr_aspect_mode.attr,
@@ -658,7 +530,7 @@ static int afd_drv_init(void) {
         pr_err("Can't register major for afd device\n");
         return error;
     }
-    afd_modue_dev = device_create(&afd_module_class, NULL, MKDEV(AFD_MAJOR, 0),
+    afd_module_dev = device_create(&afd_module_class, NULL, MKDEV(AFD_MAJOR, 0),
                                   NULL, DEV_NAME);
     init_vt_context();
     afd_debug_value_flag = 0xff;

@@ -326,25 +326,6 @@ void VT_Rest(S_VT_CONVERSION_STATE* vtc) {
 }
 
 /*!**************************************************************************
- * @brief    Set MHEG-5 aspect ratio
- * @param    context - transformation calculator context
- * @param    aspect_ratio - MHEG5 scene aspect ratio
- ****************************************************************************/
-void VT_SetMhegAspectRatio(void *context, E_ASPECT_RATIO aspect_ratio) {
-    S_VT_CONVERSION_STATE *state;
-
-    ASSERT(context != NULL);
-    if (context == NULL) return;
-
-    state = (S_VT_CONVERSION_STATE *)context;
-
-    if (state->mheg_aspect_ratio != aspect_ratio) {
-        state->mheg_aspect_ratio = aspect_ratio;
-        if (state->scaling_mode == SCALING_MHEG) state->settings_changed = true;
-    }
-}
-
-/*!**************************************************************************
  * @brief    Set user preference for video aspect ratio alignment
  *
  * @param    context - transformation calculator context
@@ -385,38 +366,15 @@ void VT_SetVideoAlignmentPref(void *context, E_VIDEO_ASPECT_MODE alignment) {
 }
 
 /*!**************************************************************************
- * @brief    Set MHEG5 scaling resolution
- * @param    context - transformation calculator context
- * @param    width
- * @param    height
- ****************************************************************************/
-void VT_SetMhegScalingResolution(void *context, U16BIT width, U16BIT height) {
-    S_VT_CONVERSION_STATE *state;
-
-    ASSERT(context != NULL);
-    if (context == NULL || width == 0 || height == 0) return;
-
-    state = (S_VT_CONVERSION_STATE *)context;
-
-    if (state->mheg_resolution_width != width ||
-        state->mheg_resolution_height != height) {
-        state->mheg_resolution_width = width;
-        state->mheg_resolution_height = height;
-
-        if (state->scaling_mode == SCALING_MHEG) {
-            state->settings_changed = TRUE;
-        }
-    }
-}
-
-/*!**************************************************************************
  * @brief    Set MHEG-5 scaling information
  * @param    context - transformation calculator context
  * @param    scaling - scaling and positioning transformation
+ * @Param    resolution_width
+ * @Param    resolution_height
  * @note     When scaling is NULL, scaling is ignored and the behaviour will
  *           be as if full screen video is mapped to the full screen.
  ****************************************************************************/
-void VT_SetMhegScaling(void *context, S_RECTANGLE *scaling) {
+void VT_SetMhegScaling(void *context, S_RECTANGLE *scaling, int resolution_width, int resolution_height) {
     S_VT_CONVERSION_STATE *state;
 
     ASSERT(context != NULL);
@@ -424,19 +382,24 @@ void VT_SetMhegScaling(void *context, S_RECTANGLE *scaling) {
 
     state = (S_VT_CONVERSION_STATE *)context;
 
+    state->scaling_mode = SCALING_MHEG;
     state->mheg_scaling_given = TRUE;
     state->mheg_scaling_rect = *scaling;
+    state->mheg_resolution_width = resolution_width;
+    state->mheg_resolution_height = resolution_height;
 
-    if (state->scaling_mode == SCALING_MHEG) state->settings_changed = TRUE;
+    state->settings_changed = TRUE;
 }
 
 /*!**************************************************************************
  * @brief    Set application scaling information
  * @param    context - transformation calculator context
  * @param    window - output window (screen CS)
+ * @Param    resolution_width
+ * @Param    resolution_height
  * @note     When window is NULL, application scaling is turned off
  ****************************************************************************/
-void VT_SetAppScaling(void *context, S_RECTANGLE *window) {
+void VT_SetAppScaling(void *context, S_RECTANGLE *window, int resolution_width, int resolution_height) {
     S_VT_CONVERSION_STATE *state;
 
     ASSERT(context != NULL);
@@ -452,51 +415,10 @@ void VT_SetAppScaling(void *context, S_RECTANGLE *window) {
     } else {
         state->scaling_mode = SCALING_APP;
         state->app_scaling_window = *window;
+        state->resolution_width = resolution_width;
+        state->resolution_height = resolution_height;
         state->settings_changed = TRUE;
     }
-}
-
-/*!**************************************************************************
- * @brief    Set widescreeen alignment mode for MHEG-5
- * @param    context - transformation calculator context
- * @param    wam - widescreen alignment mode
- ****************************************************************************/
-void VT_SetMhegVideoAlignment(void *context, E_VIDEO_ASPECT_MODE mode) {
-    S_VT_CONVERSION_STATE *state;
-
-    ASSERT(context != NULL);
-    if (context == NULL) return;
-
-    state = (S_VT_CONVERSION_STATE *)context;
-
-    if (state->mheg_wam != mode) {
-        state->mheg_wam = mode;
-        if (state->scaling_mode == SCALING_MHEG) state->settings_changed = TRUE;
-    }
-}
-
-/*!**************************************************************************
- * @brief    Set HBBTV output window
- * @param    context - transformation calculator context
- * @param    output - window
- ****************************************************************************/
-void VT_SetHbbtvWindow(void *context, S_RECTANGLE *output) {
-    S_VT_CONVERSION_STATE *state;
-
-    ASSERT(context != NULL);
-    if (context == NULL) return;
-
-    state = (S_VT_CONVERSION_STATE *)context;
-
-    if (output == NULL) {
-        state->hbb_window_rect.top = 0;
-        state->hbb_window_rect.left = 0;
-        state->hbb_window_rect.width = HD_WIDTH;
-        state->hbb_window_rect.height = HD_HEIGHT;
-    } else {
-        state->hbb_window_rect = *output;
-    }
-    if (state->scaling_mode == SCALING_HBBTV) state->settings_changed = TRUE;
 }
 
 /*!**************************************************************************
@@ -1965,18 +1887,12 @@ static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
 }
 
 static void UpdateResolution(S_VT_CONVERSION_STATE *state) {
-    if (state->scaling_mode == SCALING_APP) {
-        state->resolution_width = FHD_WIDTH;
-        state->resolution_height = FHD_HEIGHT;
-    } else if (state->scaling_mode == SCALING_MHEG) {
+    if (state->scaling_mode == SCALING_MHEG) {
         state->resolution_width = state->mheg_resolution_width;
         state->resolution_height = state->mheg_resolution_height;
     } else if (state->scaling_mode == SCALING_HBBTV) {
         state->resolution_width = HD_WIDTH;
         state->resolution_height = HD_HEIGHT;
-    } else {
-        state->resolution_width = SD_WIDTH;
-        state->resolution_height = SD_HEIGHT;
     }
 }
 
@@ -2083,20 +1999,14 @@ static S_VT_FRACT_RECT MakeRectangle(S32BIT left, S32BIT top, S32BIT width,
     return rect;
 }
 
-void VT_SetScalingMode(void *context, E_APP_SCALING_TYPE type){
+void VT_DisableScalingMode(void *context){
     S_VT_CONVERSION_STATE *state;
 
     if (context == NULL) return;
-    if (type > SCALING_MHEG) type = SCALING_NONE;
 
     state = (S_VT_CONVERSION_STATE *)context;
-    if (state->scaling_mode != type) {
-        state->scaling_mode = type;
-        if (type == SCALING_APP) {
-            S_RECTANGLE window;
-            InitRect(&window, 0, 0, SD_WIDTH, SD_HEIGHT);
-            VT_SetAppScaling(state, &window);
-        }
+    if (state->scaling_mode != SCALING_NONE) {
+        state->scaling_mode = SCALING_NONE;
         state->settings_changed = TRUE;
     }
 }
@@ -2234,6 +2144,7 @@ BOOLEAN checkInScaling(void *context) {
             && (state->hbb_window_rect.height != 0))
             return TRUE;
         if (state->scaling_mode == SCALING_MHEG
+            && (state->mheg_scaling_given)
             && (state->mheg_scaling_rect.width != 0)
             && (state->mheg_scaling_rect.height != 0))
             return TRUE;
@@ -2246,8 +2157,9 @@ void print_vt_state(void *context, char* buf, int count) {
     snprintf(buf, count, "  enable : %d\n"
                          "  aspect : %d(0 auto, 1 4:3, 2 16:9, 3 14:9, 4 zoom, 5:cus)\n"
                          "  value  : %d\n"
-                         "  type   : %d(0 none, 1 app, 2 hbbtv, 3 mheg)\n"
+                         "  type   : %d(0 none, 1 app, 2 mheg)\n"
                          "  scaling: %d %d %d %d\n"
+                         "  res    : %d %d\n"
                          "  video  : %d %d\n"
                          "  screen : %d %d\n"
                          "  vaspect: %d(0 4:3, 1 16:9 255 und)\n"
@@ -2259,6 +2171,7 @@ void print_vt_state(void *context, char* buf, int count) {
                          state->scaling_mode,
                          getScalingRect(state).left, getScalingRect(state).top,
                          getScalingRect(state).width, getScalingRect(state).height,
+                         state->resolution_width, state->resolution_height,
                          state->video_width, state->video_height,
                          state->screen_width, state->screen_height,
                          state->video_aspect_ratio,
