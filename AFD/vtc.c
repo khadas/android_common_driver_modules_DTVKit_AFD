@@ -1,12 +1,26 @@
-/*
- *
- * Copyright (c) 2015 Amlogic, Inc. All rights reserved.
- *
- * This source code is subject to the terms and conditions defined in the
- * file 'LICENSE' which is part of this source code package.
- *
- *
- */
+// Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+//
+// All information contained herein is Amlogic confidential.
+//
+// This software is provided to you pursuant to Software License
+// Agreement (SLA) with Amlogic Inc ("Amlogic"). This software may be
+// used only in accordance with the terms of this agreement.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification is strictly prohibited without prior written permission
+// from Amlogic.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 /*******************
@@ -110,11 +124,10 @@ static const S_AFD_TRANS afd_table[] = {
  ***********************/
 static void Recalculate(S_VT_CONVERSION_STATE *state);
 static E_MHEG_SCALING MhegScalingType(S_VT_CONVERSION_STATE *state);
-static BOOLEAN RectanglesDiffer(S_RECTANGLE *a, S_RECTANGLE *b);
 static void CalculateMhegScaling(S_VT_CONVERSION_STATE *state);
-static void InitRect(S_RECTANGLE *rect, S32BIT left, S32BIT top, S32BIT width,
-                     S32BIT height);
-static U8BIT GetWss(S_VT_CONVERSION_STATE *state);
+static void InitRect(S_RECTANGLE *rect, int32_t left, int32_t top, int32_t width,
+                     int32_t height);
+static uint8_t GetWss(S_VT_CONVERSION_STATE *state);
 static E_FORMAT_CONVERSION GetVideoTransformation(S_VT_CONVERSION_STATE *state,
                                                   S_VT_MATRIX *transform,
                                                   S_VT_MATRIX *clip_transform);
@@ -129,7 +142,7 @@ static void ClipRectangle(S_VT_FRACT_RECT *clip_rect, S_VT_FRACT_RECT *rect);
 static void MultiplyMatrices(S_VT_MATRIX *matrix_a, S_VT_MATRIX *matrix_b,
                              S_VT_MATRIX *output_matrix);
 static void InvertMatrix(S_VT_MATRIX *matrix, S_VT_MATRIX *inverse);
-static BOOLEAN ReduceFraction(S_VT_FRACTION *input, S_VT_FRACTION *output);
+static bool ReduceFraction(S_VT_FRACTION *input, S_VT_FRACTION *output);
 
 static void AddFractions(S_VT_FRACTION *in_a, S_VT_FRACTION *in_b,
                          S_VT_FRACTION *out);
@@ -167,9 +180,6 @@ static void VTC_SceneArScaling(S_VT_CONVERSION_STATE *state,
                                S_VT_MATRIX *current);
 
 static void VTC_ToScreen(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *current);
-
-static E_FORMAT_CONVERSION VTC_AppScalingTransform(S_VT_CONVERSION_STATE *state,
-                                                   S_VT_MATRIX *current);
 
 static void VTC_ApplyWSS(S_VT_CONVERSION_STATE *state, S_VT_FRACT_RECT *output);
 
@@ -214,32 +224,32 @@ static void Scale_HbbToScreen(S_VT_CONVERSION_STATE *state,
                               S_VT_MATRIX *transform);
 
 /*AFDs*/
-static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, S32BIT width,
-                            S32BIT height, S_VT_MATRIX *transform);
+static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_4_3_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
-                           S32BIT height, S_VT_MATRIX *transform);
+static void Scale_4_3_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                           int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_14_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
-                            S32BIT height, S_VT_MATRIX *transform);
+static void Scale_14_9_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_14_9_Centre(S_VT_CONVERSION_STATE *state, S32BIT width,
-                              S32BIT height, S_VT_MATRIX *transform);
+static void Scale_14_9_Centre(S_VT_CONVERSION_STATE *state, int32_t width,
+                              int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_4_3_Centre(S_VT_CONVERSION_STATE *state, S32BIT width,
-                             S32BIT height, S_VT_MATRIX *transform);
+static void Scale_4_3_Centre(S_VT_CONVERSION_STATE *state, int32_t width,
+                             int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_16_9_Letterbox(S_VT_CONVERSION_STATE *state, S32BIT width,
-                                 S32BIT height, S_VT_MATRIX *transform);
+static void Scale_16_9_Letterbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                                 int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_14_9_Letterbox(S_VT_CONVERSION_STATE *state, S32BIT width,
-                                 S32BIT height, S_VT_MATRIX *transform);
+static void Scale_14_9_Letterbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                                 int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, S32BIT width,
-                               S32BIT height, S_VT_MATRIX *transform);
+static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, int32_t width,
+                               int32_t height, S_VT_MATRIX *transform);
 
-static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
-                            S32BIT height, S_VT_MATRIX *transform);
+static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform);
 
 static void UpdateResolution(S_VT_CONVERSION_STATE *state);
 
@@ -255,10 +265,10 @@ static void AppScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform);
 static void NoScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform);
 
 /* Create a new fraction */
-static S_VT_FRACTION MakeFraction(S32BIT numerator, S32BIT denominator);
+static S_VT_FRACTION MakeFraction(int32_t numerator, int32_t denominator);
 
-static S_VT_FRACT_RECT MakeRectangle(S32BIT left, S32BIT top, S32BIT width,
-                                     S32BIT height);
+static S_VT_FRACT_RECT MakeRectangle(int32_t left, int32_t top, int32_t width,
+                                     int32_t height);
 
 /***********************
  * FUNCTION DEFINITIONS *
@@ -480,7 +490,7 @@ static E_FORMAT_CONVERSION AfdOrUserPreferenceTransform(
  ****************************************************************************/
 static void Recalculate(S_VT_CONVERSION_STATE *state) {
     S_VT_MATRIX transform, clip_transform;
-    U8BIT temp_wss;
+    uint8_t temp_wss;
     S_RECTANGLE input_rectangle, output_rectangle;
     S_VT_FRACT_RECT input, output;
 
@@ -659,33 +669,6 @@ static void CalculateMhegScaling(S_VT_CONVERSION_STATE *state) {
 }
 
 /*!**************************************************************************
- * @brief    Check if two rectangles are different
- *
- * @param    a - first rectange
- * @param    b - second rectangle
- * @return   TRUE if rectangles are different, FALSE if they are the same
- ****************************************************************************/
-static BOOLEAN RectanglesDiffer(S_RECTANGLE *a, S_RECTANGLE *b) {
-    if (a->left != b->left) {
-        return TRUE;
-    }
-
-    if (a->top != b->top) {
-        return TRUE;
-    }
-
-    if (a->width != b->width) {
-        return TRUE;
-    }
-
-    if (a->height != b->height) {
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-/*!**************************************************************************
  * @brief    Initialise rectangle
  * @param    rect - rectangle to initialise
  * @param    left - left position
@@ -693,8 +676,8 @@ static BOOLEAN RectanglesDiffer(S_RECTANGLE *a, S_RECTANGLE *b) {
  * @param    width - rectangle width
  * @param    height - rectangle height
  ****************************************************************************/
-static void InitRect(S_RECTANGLE *rect, S32BIT left, S32BIT top, S32BIT width,
-                     S32BIT height) {
+static void InitRect(S_RECTANGLE *rect, int32_t left, int32_t top, int32_t width,
+                     int32_t height) {
     rect->left = left;
     rect->top = top;
     rect->width = width;
@@ -706,7 +689,7 @@ static void InitRect(S_RECTANGLE *rect, S32BIT left, S32BIT top, S32BIT width,
  * @param    state - conversion state
  * @return   The calculated WSS value
  ****************************************************************************/
-static U8BIT GetWss(S_VT_CONVERSION_STATE *state) {
+static uint8_t GetWss(S_VT_CONVERSION_STATE *state) {
     if (state->video_aspect_ratio == ASPECT_RATIO_4_3) {
         switch (state->afd) {
             case 0:
@@ -1045,7 +1028,7 @@ static E_FORMAT_CONVERSION VTC_UserPreferenceScaling(
  ****************************************************************************/
 static E_FORMAT_CONVERSION VTC_AfdScaling(S_VT_CONVERSION_STATE *state,
                                           S_VT_MATRIX *current) {
-    BOOLEAN apply;
+    bool apply;
     E_FORMAT_CONVERSION transformation;
     S_VT_MATRIX transform;
 
@@ -1219,7 +1202,7 @@ static E_FORMAT_CONVERSION VTC_QuarterScreenScaling(
  ****************************************************************************/
 static void VTC_SceneArScaling(S_VT_CONVERSION_STATE *state,
                                S_VT_MATRIX *current) {
-    BOOLEAN apply;
+    bool apply;
     S_VT_MATRIX transform;
 
     apply = FALSE;
@@ -1263,42 +1246,6 @@ static void VTC_ToScreen(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *current) {
 
     Scale_ToScreen(state, &transform);
     MultiplyMatrices(&transform, current, current);
-}
-
-/*!**************************************************************************
- * @brief    Compose an application scaling transformation with the given
- *           transformation
- * @param    state - conversion state
- * @param    current - the current transformation matrix
- * @return   Format conversion applied
- ****************************************************************************/
-static E_FORMAT_CONVERSION VTC_AppScalingTransform(S_VT_CONVERSION_STATE *state,
-                                                   S_VT_MATRIX *current) {
-    E_FORMAT_CONVERSION transformation;
-    S_VT_MATRIX transform;
-
-    transformation = FORMAT_CONVERSION_IGNORE;
-
-    /* Take care of video aspact ratio */
-    NoScaling(state, &transform);
-
-    if ((state->video_aspect_ratio == ASPECT_RATIO_4_3) &&
-        (state->display_aspect_ratio == ASPECT_RATIO_16_9)) {
-        /* 4:3 video on 16:9 display = pillar-box */
-        transformation = FORMAT_CONVERSION_PILLAR_BOX;
-        Scale_Pillarbox(state, state->resolution_width,
-                        state->resolution_height, &transform);
-    } else if ((state->video_aspect_ratio == ASPECT_RATIO_16_9) &&
-               (state->display_aspect_ratio == ASPECT_RATIO_4_3)) {
-        /* 16:9 video on 4:3 display = pan-scan (centre cut-out) */
-        transformation = FORMAT_CONVERSION_PANSCAN;
-        Scale_CentreCutOut(state, state->resolution_width,
-                           state->resolution_height, &transform);
-    }
-
-    MultiplyMatrices(&transform, current, current);
-
-    return transformation;
 }
 
 /*!**************************************************************************
@@ -1454,8 +1401,8 @@ static void ClipRectangle(S_VT_FRACT_RECT *clip_rect, S_VT_FRACT_RECT *rect) {
     }
 }
 
-static S32BIT Gcd(S32BIT a, S32BIT b) {
-    S32BIT r;
+static int32_t Gcd(int32_t a, int32_t b) {
+    int32_t r;
 
     while (b != 0) {
         r = b;
@@ -1466,8 +1413,8 @@ static S32BIT Gcd(S32BIT a, S32BIT b) {
     return a;
 }
 
-static BOOLEAN ReduceFraction(S_VT_FRACTION *input, S_VT_FRACTION *output) {
-    S32BIT num, den, gcd;
+static bool ReduceFraction(S_VT_FRACTION *input, S_VT_FRACTION *output) {
+    int32_t num, den, gcd;
 
     num = input->numerator >= 0 ? input->numerator : -input->numerator;
     den = input->denominator >= 0 ? input->denominator : -input->denominator;
@@ -1484,7 +1431,7 @@ static BOOLEAN ReduceFraction(S_VT_FRACTION *input, S_VT_FRACTION *output) {
 
 static void AddFractions(S_VT_FRACTION *in_a, S_VT_FRACTION *in_b,
                          S_VT_FRACTION *out) {
-    S32BIT gcd;
+    int32_t gcd;
 
     /* Check if one of the inputs is 0, in which case the more
      * complicated addition function doesn't need to be performed
@@ -1574,7 +1521,7 @@ static void MultiplyMatrices(S_VT_MATRIX *matrix_a, S_VT_MATRIX *matrix_b,
 }
 
 static void InvertMatrix(S_VT_MATRIX *matrix, S_VT_MATRIX *inverse) {
-    S32BIT temp;
+    int32_t temp;
 
     /* Inverse:
      *
@@ -1788,8 +1735,8 @@ static void Scale_HbbToScreen(S_VT_CONVERSION_STATE *state,
     transform->d = MakeFraction(0, 1);
 }
 
-static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, S32BIT width,
-                            S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform) {
     // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
 
     ASSERT(state);
@@ -1800,8 +1747,8 @@ static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(0, 1);
 }
 
-static void Scale_4_3_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
-                           S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_4_3_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                           int32_t height, S_VT_MATRIX *transform) {
     // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
 
     ASSERT(state);
@@ -1812,8 +1759,8 @@ static void Scale_4_3_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(-height, 6);
 }
 
-static void Scale_14_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
-                            S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_14_9_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform) {
     ASSERT(state);
 
     transform->a = MakeFraction(7, 8);
@@ -1822,8 +1769,8 @@ static void Scale_14_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(-height, 12);
 }
 
-static void Scale_14_9_Centre(S_VT_CONVERSION_STATE *state, S32BIT width,
-                              S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_14_9_Centre(S_VT_CONVERSION_STATE *state, int32_t width,
+                              int32_t height, S_VT_MATRIX *transform) {
     ASSERT(state);
 
     transform->a = MakeFraction(8, 7);
@@ -1832,8 +1779,8 @@ static void Scale_14_9_Centre(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(-height, 14);
 }
 
-static void Scale_4_3_Centre(S_VT_CONVERSION_STATE *state, S32BIT width,
-                             S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_4_3_Centre(S_VT_CONVERSION_STATE *state, int32_t width,
+                             int32_t height, S_VT_MATRIX *transform) {
     ASSERT(state);
 
     transform->a = MakeFraction(4, 3);
@@ -1842,8 +1789,8 @@ static void Scale_4_3_Centre(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(-height, 6);
 }
 
-static void Scale_16_9_Letterbox(S_VT_CONVERSION_STATE *state, S32BIT width,
-                                 S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_16_9_Letterbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                                 int32_t height, S_VT_MATRIX *transform) {
     // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
 
     ASSERT(state);
@@ -1854,8 +1801,8 @@ static void Scale_16_9_Letterbox(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(height, 8);
 }
 
-static void Scale_14_9_Letterbox(S_VT_CONVERSION_STATE *state, S32BIT width,
-                                 S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_14_9_Letterbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                                 int32_t height, S_VT_MATRIX *transform) {
     ASSERT(state);
 
     transform->a = MakeFraction(8, 7);
@@ -1864,8 +1811,8 @@ static void Scale_14_9_Letterbox(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(height, 14);
 }
 
-static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, S32BIT width,
-                               S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, int32_t width,
+                               int32_t height, S_VT_MATRIX *transform) {
     // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
 
     ASSERT(state);
@@ -1876,8 +1823,8 @@ static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, S32BIT width,
     transform->d = MakeFraction(0, 1);
 }
 
-static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, S32BIT width,
-                            S32BIT height, S_VT_MATRIX *transform) {
+static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform) {
     ASSERT(state);
 
     transform->a = MakeFraction(7, 6);
@@ -1897,12 +1844,12 @@ static void UpdateResolution(S_VT_CONVERSION_STATE *state) {
 }
 
 static void MhegScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform) {
-    S32BIT x = state->mheg_scaling_rect.left;
-    S32BIT y = state->mheg_scaling_rect.top;
-    S32BIT width = state->mheg_scaling_rect.width;
-    S32BIT height = state->mheg_scaling_rect.height;
-    S32BIT res_width = state->mheg_resolution_width;
-    S32BIT res_height = state->mheg_resolution_height;
+    int32_t x = state->mheg_scaling_rect.left;
+    int32_t y = state->mheg_scaling_rect.top;
+    int32_t width = state->mheg_scaling_rect.width;
+    int32_t height = state->mheg_scaling_rect.height;
+    int32_t res_width = state->mheg_resolution_width;
+    int32_t res_height = state->mheg_resolution_height;
 
     transform->a = MakeFraction(width, res_width);
     transform->b = MakeFraction(x, 1);
@@ -1911,11 +1858,11 @@ static void MhegScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform) {
 }
 
 static void HbbScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform) {
-    S32BIT x = state->hbb_window_rect.left;
-    S32BIT y = state->hbb_window_rect.top;
-    S32BIT width = state->hbb_window_rect.width;
-    S32BIT height = state->hbb_window_rect.height;
-    S32BIT adjust;
+    int32_t x = state->hbb_window_rect.left;
+    int32_t y = state->hbb_window_rect.top;
+    int32_t width = state->hbb_window_rect.width;
+    int32_t height = state->hbb_window_rect.height;
+    int32_t adjust;
 
     if (state->video_aspect_ratio == ASPECT_RATIO_4_3) {
         adjust = (height * 4) / 3;
@@ -1955,10 +1902,10 @@ static void HbbScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform) {
 }
 
 static void AppScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform) {
-    S32BIT x = state->app_scaling_window.left;
-    S32BIT y = state->app_scaling_window.top;
-    S32BIT width = state->app_scaling_window.width;
-    S32BIT height = state->app_scaling_window.height;
+    int32_t x = state->app_scaling_window.left;
+    int32_t y = state->app_scaling_window.top;
+    int32_t width = state->app_scaling_window.width;
+    int32_t height = state->app_scaling_window.height;
 
     ASSERT(state);
 
@@ -1977,15 +1924,15 @@ static void NoScaling(S_VT_CONVERSION_STATE *state, S_VT_MATRIX *transform) {
     transform->d = MakeFraction(0, 1);
 }
 
-static S_VT_FRACTION MakeFraction(S32BIT numerator, S32BIT denominator) {
+static S_VT_FRACTION MakeFraction(int32_t numerator, int32_t denominator) {
     S_VT_FRACTION fraction;
     fraction.numerator = numerator;
     fraction.denominator = denominator;
     return fraction;
 }
 
-static S_VT_FRACT_RECT MakeRectangle(S32BIT left, S32BIT top, S32BIT width,
-                                     S32BIT height) {
+static S_VT_FRACT_RECT MakeRectangle(int32_t left, int32_t top, int32_t width,
+                                     int32_t height) {
     S_VT_FRACT_RECT rect;
     rect.left.numerator = left;
     rect.top.numerator = top;
@@ -2012,10 +1959,10 @@ void VT_DisableScalingMode(void *context){
 }
 
 void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
-               E_ASPECT_RATIO frame_aspectratio, U8BIT afd_value) {
-    BOOLEAN changed = FALSE;
+               E_ASPECT_RATIO frame_aspectratio, uint8_t afd_value) {
+    bool changed = FALSE;
     S_VT_CONVERSION_STATE *state;
-    U8BIT afd_new = afd_value & 0x07;
+    uint8_t afd_new = afd_value & 0x07;
     //E_ASPECT_RATIO dis_aspect;
 
     if (context == NULL) return;
@@ -2129,7 +2076,7 @@ int getDisplayAspect(int width, int height) {
     return aspect;
 }
 
-BOOLEAN checkInScaling(void *context) {
+bool checkInScaling(void *context) {
     S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
 
     if (state && state->afd_enabled) {

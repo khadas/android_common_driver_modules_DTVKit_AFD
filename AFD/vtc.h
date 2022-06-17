@@ -1,46 +1,59 @@
-/*
- * Copyright (c) 2014 Amlogic, Inc. All rights reserved.
- *
- * This source code is subject to the terms and conditions defined in the
- * file 'LICENSE' which is part of this source code package.
- *
- * Description: header file
- */
+// Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+//
+// All information contained herein is Amlogic confidential.
+//
+// This software is provided to you pursuant to Software License
+// Agreement (SLA) with Amlogic Inc ("Amlogic"). This software may be
+// used only in accordance with the terms of this agreement.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification is strictly prohibited without prior written permission
+// from Amlogic.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef VTC_H
-#define VTC_H
 
-#include <stdbool.h>
+#ifndef AML_VTC_H
+#define AML_VTC_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <linux/types.h>
+
 
 #ifndef NO_STDINT_H
-typedef unsigned char U8BIT;
-typedef unsigned short U16BIT;
-typedef signed char S8BIT;
-typedef signed short S16BIT;
-typedef unsigned long U32BIT;
-typedef signed long S32BIT;
-typedef unsigned long long U64BIT;
-typedef bool BOOLEAN;
+//typedef unsigned char uint8_t;
+//typedef unsigned short uint16_t;
+//typedef signed char int8_t;
+//typedef signed short int16_t;
+//typedef unsigned long uint32_t;
+//typedef signed long int32_t;
+//typedef unsigned long long uint64_t;
+//typedef bool bool;
 #else
-typedef uint8_t U8BIT;
-typedef int8_t S8BIT;
-typedef uint16_t U16BIT;
-typedef int16_t S16BIT;
-typedef uint32_t U32BIT;
-typedef int32_t S32BIT;
-typedef uint64_t U64BIT;
-typedef bool BOOLEAN;
+//typedef uint8_t uint8_t;
+//typedef int8_t int8_t;
+//typedef uint16_t uint16_t;
+//typedef int16_t int16_t;
+//typedef uint32_t uint32_t;
+//typedef int32_t int32_t;
+//typedef uint64_t uint64_t;
+//typedef bool bool;
 #endif
 
 typedef struct s_vt_options {
-    BOOLEAN mheg_required;
-    BOOLEAN afd_required;
-    BOOLEAN hbbtv_required;
-    U8BIT path;
+    bool mheg_required;
+    bool afd_required;
+    bool hbbtv_required;
+    uint8_t path;
 } S_VT_OPTIONS;
 
 typedef void (*F_VT_NOTIFICATION_CALLBACK)(void *userdata);
@@ -107,7 +120,7 @@ typedef enum {
 */
 
 typedef struct {
-    U8BIT afd;
+    uint8_t afd;
     E_ASPECT_RATIO video_aspect_ratio;
     E_ASPECT_RATIO display_aspect_ratio;
     E_AFD_PREFERENCE afd_preference;
@@ -115,8 +128,8 @@ typedef struct {
 } S_AFD_TRANS;
 
 typedef struct s_fraction {
-    S32BIT numerator;
-    S32BIT denominator;
+    int32_t numerator;
+    int32_t denominator;
 } S_VT_FRACTION;
 
 /* (a 0 b)
@@ -140,17 +153,17 @@ typedef struct s_fract_rect {
 } S_VT_FRACT_RECT;
 
 typedef struct {
-    S32BIT left;
-    S32BIT top;
-    U32BIT width;
-    U32BIT height;
+    int32_t left;
+    int32_t top;
+    uint32_t width;
+    uint32_t height;
 } S_RECTANGLE;
 
 typedef struct {
-    U32BIT video_width;
-    U32BIT video_height;
-    U32BIT screen_width;
-    U32BIT screen_height;
+    uint32_t video_width;
+    uint32_t video_height;
+    uint32_t screen_width;
+    uint32_t screen_height;
 } S_FRAME_DIS_INFO;
 
 typedef enum {
@@ -174,23 +187,23 @@ typedef struct s_conversion_state {
     S_RECTANGLE mheg_scaling_rect;
     S_RECTANGLE app_scaling_window;
     S_RECTANGLE hbb_window_rect;
-    BOOLEAN afd_enabled;
+    bool afd_enabled;
     E_APP_SCALING_TYPE scaling_mode;
-    BOOLEAN mheg_scaling_given;
-    BOOLEAN settings_changed;
-    U16BIT mheg_resolution_width;
-    U16BIT mheg_resolution_height;
-    U16BIT resolution_width;
-    U16BIT resolution_height;
-    U16BIT video_width;
-    U16BIT video_height;
-    U16BIT screen_width;
-    U16BIT screen_height;
+    bool mheg_scaling_given;
+    bool settings_changed;
+    uint16_t mheg_resolution_width;
+    uint16_t mheg_resolution_height;
+    uint16_t resolution_width;
+    uint16_t resolution_height;
+    uint16_t video_width;
+    uint16_t video_height;
+    uint16_t screen_width;
+    uint16_t screen_height;
     E_ASPECT_RATIO video_aspect_ratio;
     E_ASPECT_RATIO display_aspect_ratio;
     E_STB_AV_DECODER_STATUS decoder_status;
-    U8BIT afd;
-    U8BIT wss;
+    uint8_t afd;
+    uint8_t wss;
     S_RECTANGLE input_rectangle, output_rectangle;
 } S_VT_CONVERSION_STATE;
 
@@ -254,10 +267,10 @@ int getDisplayAspect(int width, int height);
  * @param    context - transformation calculator context
  * @parm     frame_info - FRAME_DIS_INFO
  * @parm     frame_aspectratio - aspect ratio
- * @parm     U8BIT afd_value
+ * @parm     uint8_t afd_value
  ****************************************************************************/
 void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
-               E_ASPECT_RATIO frame_aspectratio, U8BIT afd_value);
+               E_ASPECT_RATIO frame_aspectratio, uint8_t afd_value);
 /*!**************************************************************************
  * @brief    get input_rectangle /sys/class/video/crop
  * @param    context - transformation calculator context
@@ -277,7 +290,7 @@ S_RECTANGLE getScalingRect(void *context);
  * @brief    check scaling result for vpp
  * @param    context - transformation calculator context
  ****************************************************************************/
-BOOLEAN checkInScaling(void *context);
+bool checkInScaling(void *context);
 void print_vt_state(void *context, char* buf, int count);
 
 
@@ -285,4 +298,4 @@ void print_vt_state(void *context, char* buf, int count);
 }
 #endif
 
-#endif /*VTC_H*/
+#endif /*AML_VTC_H*/

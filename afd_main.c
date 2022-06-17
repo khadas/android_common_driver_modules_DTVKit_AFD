@@ -1,13 +1,27 @@
-/*
- *
- * Copyright (c) 2015 Amlogic, Inc. All rights reserved.
- *
- * This source code is subject to the terms and conditions defined in the
- * file 'LICENSE' which is part of this source code package.
- *
- * tb_module related tb detect
- *
- */
+// Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+//
+// All information contained herein is Amlogic confidential.
+//
+// This software is provided to you pursuant to Software License
+// Agreement (SLA) with Amlogic Inc ("Amlogic"). This software may be
+// used only in accordance with the terms of this agreement.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification is strictly prohibited without prior written permission
+// from Amlogic.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include <linux/amlogic/major.h>
 #include <linux/ctype.h>
@@ -35,10 +49,12 @@
 #define CLS_NAME "afd_module"
 
 static struct device *afd_module_dev;
+static dev_t aml_afd_devno;
 
-static char afd_version_str[] = "AFD module: v2022.06.13a";
+static char afd_version_str[] = "AFD module: v2022.06.17a";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
+
 
 static int parse_para(const char *para, int para_num, int *result) {
     char *token = NULL;
@@ -81,6 +97,8 @@ static void update_scaling_rect(const char *para) {
     S_RECTANGLE rect;
     int scale_type;
     int res_width, res_height;
+    VT_NODE_t* vt = NULL;
+    S_VT_CONVERSION_STATE* vt_context = NULL;
 
     if (likely(parse_para(para, 8, parsed) == 8)) {
         if (afd_debug_flag) {
@@ -96,11 +114,11 @@ static void update_scaling_rect(const char *para) {
         rect.height = parsed[5];
         res_width = parsed[6];
         res_height = parsed[7];
-        VT_NODE_t* vt = find_vtc(path);
+        vt = find_vtc(path);
         if (!vt) {
             vt = create_vtc(path);
         }
-        S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
+        vt_context = vt ? &(vt->vtc) : NULL;
         if (vt_context) {
             if (scale_type == SCALING_APP) {
                 VT_SetAppScaling(vt_context, &rect, res_width, res_height);
@@ -120,11 +138,11 @@ static void update_scaling_rect(const char *para) {
         path = parsed[0];
         scale_type = parsed[1];
         if (scale_type == 0) {
-            VT_NODE_t* vt = find_vtc(path);
+            vt = find_vtc(path);
             if (!vt) {
                 vt = create_vtc(path);
             }
-            S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
+            vt_context = vt ? &(vt->vtc) : NULL;
             if (vt_context) {
                 VT_DisableScalingMode(vt_context);
             }
@@ -150,6 +168,11 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     unsigned char afd;
     S_FRAME_DIS_INFO frame_info;
     int aspect = 0xff;
+    VT_NODE_t* vt = NULL;
+    S_VT_CONVERSION_STATE* vt_context = NULL;
+    S_RECTANGLE crop, disp;
+    unsigned int inst_id;
+    unsigned int vpts;
 
     struct afd_handle_s *afd_h = (struct afd_handle_s *)handle;
 
@@ -165,10 +188,8 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
         return ret;
     }
 
-    unsigned int inst_id;
-    unsigned int vpts;
     afd = getaf((unsigned char *)in->ud_param, &inst_id, &vpts);
-    VT_NODE_t* vt = find_vtc_inst(inst_id);
+    vt = find_vtc_inst(inst_id);
     //for old path devices, decoder maybe has no instance info,
     //we will re-try to find path 0 vtc for main path
     if (!vt) {
@@ -181,7 +202,7 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
             in->video_ar.numerator, in->video_ar.denominator,
             in->disp_info.x_start, in->disp_info.y_start, in->disp_info.x_end, in->disp_info.y_end);
     }
-    S_VT_CONVERSION_STATE* vt_context = vt ? &(vt->vtc) : NULL;
+    vt_context = vt ? &(vt->vtc) : NULL;
     if (!vt_context) return ret;
 
     if (!vt_context->afd_enabled && !afd_debug_flag) return ret;
@@ -200,8 +221,8 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     frame_info.screen_height = in->disp_info.y_end - in->disp_info.y_start;
     aspect = getAspect(in->video_ar.numerator, in->video_ar.denominator);
     AFDHandle(vt_context, &frame_info, aspect, afd);
-    S_RECTANGLE crop = getInrectangle(vt_context);
-    S_RECTANGLE disp = getOutrectangle(vt_context);
+    crop = getInrectangle(vt_context);
+    disp = getOutrectangle(vt_context);
 
     out->afd_enable = checkInScaling(vt_context);
     out->crop_info.top = crop.top;
@@ -400,7 +421,7 @@ static ssize_t aspect_mode_store(struct class *cla, struct class_attribute *attr
 
 static ssize_t state_show(struct class *cla, struct class_attribute *attr,
                             char *buf) {
-    ssize_t size;
+    ssize_t size = 0;
     char* tmp_buf = kzalloc(10240, GFP_KERNEL);
 
     if (tmp_buf) {
@@ -525,21 +546,30 @@ static int afd_drv_init(void) {
     }
 
     /* create afd device */
-    error = register_chrdev(AFD_MAJOR, "afd_module", &afd_module_fops);
+    error = alloc_chrdev_region(&aml_afd_devno, 0, 1, DEV_NAME);
     if (error < 0) {
-        pr_err("Can't register major for afd device\n");
+        pr_err("Can't alloc chrdev afd device\n");
+        unregister_chrdev_region(aml_afd_devno, 1);
+        class_unregister(&afd_module_class);
         return error;
     }
-    afd_module_dev = device_create(&afd_module_class, NULL, MKDEV(AFD_MAJOR, 0),
+    afd_module_dev = device_create(&afd_module_class, NULL, MKDEV(aml_afd_devno, 0),
                                   NULL, DEV_NAME);
+
+    if (IS_ERR(afd_module_dev)) {
+        pr_err("Can't create aml afd module device\n");
+        unregister_chrdev_region(aml_afd_devno, 1);
+        class_unregister(&afd_module_class);
+        return -ENODEV;
+    }
     init_vt_context();
     afd_debug_value_flag = 0xff;
     return error;
 }
 
 static void afd_drv_exit(void) {
+    unregister_chrdev_region(aml_afd_devno, 1);
     class_unregister(&afd_module_class);
-    unregister_chrdev(AFD_MAJOR, DEV_NAME);
 }
 
 static int __init amlogic_afd_module_init(void) {

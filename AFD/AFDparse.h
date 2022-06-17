@@ -1,40 +1,33 @@
-/*
- *
- * Copyright (c) 2015 Amlogic, Inc. All rights reserved.
- *
- * This source code is subject to the terms and conditions defined in the
- * file 'LICENSE' which is part of this source code package.
- *
- *
- */
+// Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+//
+// All information contained herein is Amlogic confidential.
+//
+// This software is provided to you pursuant to Software License
+// Agreement (SLA) with Amlogic Inc ("Amlogic"). This software may be
+// used only in accordance with the terms of this agreement.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification is strictly prohibited without prior written permission
+// from Amlogic.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #ifndef AFD_PARSE_H
 #define AFD_PARSE_H
 
-/* There is some amount of overlap with <sys/types.h> as known by inet code */
-#ifndef __int8_t_defined
-#define __int8_t_defined
-typedef signed char int8_t;
-typedef short int int16_t;
-typedef int int32_t;
-#if __WORDSIZE == 64
-typedef long int int64_t;
-#else
-__extension__ typedef long long int int64_t;
-#endif
-#endif
-
-/* Unsigned.  */
-typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-#ifndef __uint32_t_defined
-typedef unsigned int uint32_t;
-#define __uint32_t_defined
-#endif
-#if __WORDSIZE == 64
-typedef unsigned long int uint64_t;
-#else
-__extension__ typedef unsigned long long int uint64_t;
-#endif
+#include <linux/types.h>
+#include <linux/slab.h>
 
 #define MAX_CC_DATA_LEN (1024 * 5 + 4)
 
@@ -109,92 +102,6 @@ typedef enum {
     VFORMAT_AV1 = 16,
     VFORMAT_MAX = 9999999,
 } vformat_t;  // defined in <vcodec.h> ,move to this file-chenfei.dou
-
-#define AMSTREAM_IOC_MAGIC 'S'
-#define AMSTREAM_IOC_UD_LENGTH _IOR(AMSTREAM_IOC_MAGIC, 0x54, unsigned long)
-#define AMSTREAM_IOC_UD_POC _IOR(AMSTREAM_IOC_MAGIC, 0x55, int)
-#define AMSTREAM_IOC_UD_FLUSH_USERDATA _IOR(AMSTREAM_IOC_MAGIC, 0x56, int)
-#define AMSTREAM_IOC_UD_BUF_READ _IOR(AMSTREAM_IOC_MAGIC, 0x57, int)
-#define AMSTREAM_IOC_UD_AVAIBLE_VDEC \
-    _IOR(AMSTREAM_IOC_MAGIC, 0x5c, unsigned int)
-#define AMSTREAM_IOC_GET_MVDECINFO _IOR(AMSTREAM_IOC_MAGIC, 0xcb, int)
-
-#define QOS_FRAME_NUM 8
-
-struct vframe_qos_s {
-    uint32_t num;
-    uint32_t type;
-    uint32_t size;
-    uint32_t pts;
-    int32_t max_qp;
-    int32_t avg_qp;
-    int32_t min_qp;
-    int32_t max_skip;
-    int32_t avg_skip;
-    int32_t min_skip;
-    int32_t max_mv;
-    int32_t min_mv;
-    int32_t avg_mv;
-    int32_t decode_buffer;  // For padding currently
-} /*vframe_qos */;
-
-struct vframe_comm_s {
-    int32_t vdec_id;
-    uint8_t vdec_name[16];
-    uint32_t vdec_type;
-};
-
-struct vframe_counter_s {
-    struct vframe_qos_s qos;
-    uint32_t decode_time_cost; /*us*/
-    uint32_t frame_width;
-    uint32_t frame_height;
-    uint32_t frame_rate;
-    uint32_t bit_depth_luma;  // original bit_rate;
-    uint32_t frame_dur;
-    uint32_t bit_depth_chroma;  // original frame_data;
-    uint32_t error_count;
-    uint32_t status;
-    uint32_t frame_count;
-    uint32_t error_frame_count;
-    uint32_t drop_frame_count;
-    uint64_t total_data;         // this member must be 8 bytes alignment
-    uint32_t double_write_mode;  // original samp_cnt;
-    uint32_t offset;
-    uint32_t ratio_control;
-    uint32_t vf_type;
-    uint32_t signal_type;
-    uint32_t pts;
-    uint64_t pts_us64;
-#if ANDROID_PLATFORM_SDK_VERSION >= 29
-    /*mediacodec report*/
-    unsigned int i_decoded_frames;    // i frames decoded
-    unsigned int i_lost_frames;       // i frames can not be decoded
-    unsigned int i_concealed_frames;  // i frames decoded but have some error
-    unsigned int p_decoded_frames;
-    unsigned int p_lost_frames;
-    unsigned int p_concealed_frames;
-    unsigned int b_decoded_frames;
-    unsigned int b_lost_frames;
-    unsigned int b_concealed_frames;
-    unsigned int av_resynch_counter;
-#endif
-};
-
-struct av_param_mvdec_t {
-    int32_t vdec_id;
-
-    /*This member is used for versioning this structure.
-     *When passed from userspace, its value must be
-     *sizeof(struct av_param_mvdec_t)
-     */
-    int32_t struct_size;
-
-    int32_t slots;
-
-    struct vframe_comm_s comm;
-    struct vframe_counter_s minfo[QOS_FRAME_NUM];
-};
 
 struct userdata_meta_info_t {
     uint32_t poc_number;
@@ -292,7 +199,7 @@ struct CCData {
     int32_t poc;
 };
 
-static void aml_swap_data(uint8_t *user_data, int ud_size);
+//static void aml_swap_data(uint8_t *user_data, int ud_size);
 uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
 userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len);
 uint8_t processMpegData(uint8_t *data, int len);

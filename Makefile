@@ -1,20 +1,60 @@
+# Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+#
+# All information contained herein is Amlogic confidential.
+#
+# This software is provided to you pursuant to Software License
+# Agreement (SLA) with Amlogic Inc ("Amlogic"). This software may be
+# used only in accordance with the terms of this agreement.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification is strictly prohibited without prior written permission
+# from Amlogic.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 ifeq ($(KERNEL_A32_SUPPORT), true)
 KERNEL_ARCH := arm
 else
 KERNEL_ARCH := arm64
 endif
 SUBDIR = ./AFD
-INCLUDE += /usr/include
+#INCLUDE += /usr/include
 #KDIR := $(shell pwd)/$(PRODUCT_OUT)/obj/KERNEL_OBJ/
 #AFD_MODULES := $(shell pwd)/$(PRODUCT_OUT)/obj/afd_module
 
-ifeq (true, $(TARGET_BUILD_KERNEL_4_9))
-AFD_BUILD_4_9=1
+AFD_BUILD_4_9 := 0
+
+ifeq (true, $(TARGET_BUILD_KERNEL_5_15))
+#android t + 5.15
+AFD_BUILD_4_9 := 0
 else
-AFD_BUILD_4_9=0
+ifneq ($(TARGET_BUILD_KERNEL_4_9),)
+#android r and higher
+ifeq (true, $(TARGET_BUILD_KERNEL_4_9))
+AFD_BUILD_4_9 := 1
+endif
+else
+#android p
+ifneq (true, $(TARGET_BUILD_KERNEL_5_4))
+AFD_BUILD_4_9 := 1
+endif
+endif
 endif
 
-CONFIGS := CONFIG_AFD_MODULE=m
+EXTRA_CFLAGS += -DAFD_BUILD_4_9=$(AFD_BUILD_4_9)
+
+AFD_CONFIGS := CONFIG_AFD_MODULE=m
 
 CONFIGS_BUILD := -Wno-undef -Wno-pointer-sign \
 		-Wno-unused-const-variable \
@@ -31,7 +71,7 @@ afd_module-objs = $(SUBDIR)/AFDparse.o \
 obj-$(CONFIG_AFD_MODULE) += afd_module.o
 
 modules:
-	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules ARCH=$(KERNEL_ARCH)  "EXTRA_CFLAGS+=-I$(INCLUDE) -Wno-error -I$(EXTRA_CFLAGS1) -DAFD_BUILD_4_9=$(AFD_BUILD_4_9) $(CONFIGS_BUILD) $(EXTRA_INCLUDE) $(KBUILD_CFLAGS_MODULE)" $(CONFIGS)
+	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules ARCH=$(KERNEL_ARCH)  "-Wno-error -I$(EXTRA_CFLAGS1) $(CONFIGS_BUILD) $(EXTRA_INCLUDE) $(KBUILD_CFLAGS_MODULE)" $(AFD_CONFIGS)
 
 all:modules
 

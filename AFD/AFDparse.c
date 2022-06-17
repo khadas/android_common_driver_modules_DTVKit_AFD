@@ -1,17 +1,32 @@
-/*
- *
- * Copyright (c) 2015 Amlogic, Inc. All rights reserved.
- *
- * This source code is subject to the terms and conditions defined in the
- * file 'LICENSE' which is part of this source code package.
- *
- *
- */
+// Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+//
+// All information contained herein is Amlogic confidential.
+//
+// This software is provided to you pursuant to Software License
+// Agreement (SLA) with Amlogic Inc ("Amlogic"). This software may be
+// used only in accordance with the terms of this agreement.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification is strictly prohibited without prior written permission
+// from Amlogic.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "AFDparse.h"
 
 #include <linux/kernel.h>
-#include <string.h>
+#include <linux/string.h>
 
 #define UD_SIZE (8 * 1024)
 
@@ -51,7 +66,6 @@ uint8_t processMpegData(uint8_t *data, int len) {
 }
 uint8_t processH264Data(uint8_t *data, int len) {
     uint8_t *pd = data;
-    int left = len;
     uint8_t AF = 0;
 
     AM_USERDATA_AFD_t afd = *((AM_USERDATA_AFD_t *)(pd + 7));
@@ -80,22 +94,23 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
     uint8_t af = 0xFF;
     int left = 0, r = 0;
     struct userdata_param_t *ud = (struct userdata_param_t *)rawData;
-    uint8_t data[MAX_CC_DATA_LEN];
-    uint8_t *pd = data;
+    uint8_t *pd = NULL;
+    userdata_type mType;
 
     *inst_id = ud->instance_id;
     *vpts = ud->meta_info.vpts;
     if (ud->pbuf_addr == NULL || ud->buf_len == 0)
         return 0xff;
 
-    memset(pd, 0, MAX_CC_DATA_LEN);
+    pd = kzalloc(MAX_CC_DATA_LEN, GFP_ATOMIC);
+    if (!pd) return af;
+
     r = ud->buf_len;
     r = (r > MAX_CC_DATA_LEN) ? MAX_CC_DATA_LEN : r;
     memcpy(pd, ud->pbuf_addr, r);
-    aml_swap_data(data + left, r);
+    aml_swap_data(pd + left, r);
     left += r;
-    pd = data;
-    userdata_type mType = checkFormat(ud, pd, left);
+    mType = checkFormat(ud, pd, left);
     switch (mType) {
         case MPEG_AFD_TYPE: {
             af = processMpegData(pd, left);
@@ -110,6 +125,8 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
             break;
         }
     }
+    kfree(pd);
+
     return af;
 }
 
