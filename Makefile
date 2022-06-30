@@ -35,6 +35,9 @@ SUBDIR = ./AFD
 
 AFD_BUILD_4_9 := 0
 
+ifeq (4.9, $(TARGET_BUILD_KERNEL_VERSION))
+AFD_BUILD_4_9 := 1
+else
 ifeq (true, $(TARGET_BUILD_KERNEL_5_15))
 #android t + 5.15
 AFD_BUILD_4_9 := 0
@@ -48,6 +51,7 @@ else
 #android p
 ifneq (true, $(TARGET_BUILD_KERNEL_5_4))
 AFD_BUILD_4_9 := 1
+endif
 endif
 endif
 endif
