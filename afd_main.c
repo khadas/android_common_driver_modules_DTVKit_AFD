@@ -51,7 +51,7 @@
 static struct device *afd_module_dev;
 static dev_t aml_afd_devno;
 
-static char afd_version_str[] = "AFD module: v2022.06.17a";
+static char afd_version_str[] = "AFD module: v2022.07.26a";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
 
@@ -339,13 +339,7 @@ static ssize_t value_store(struct class *class, struct class_attribute *attr,
 
 static ssize_t enable_show(struct class *class, struct class_attribute *attr,
                            char *buf) {
-    ssize_t size;
-    char tmp_buf[1024];
-
-    print_enable_value(tmp_buf, 1024);
-    size = sprintf(buf, "%s\n", tmp_buf);
-
-    return size;
+    return 0;
 }
 
 static ssize_t enable_store(struct class *class, struct class_attribute *attr,
@@ -399,13 +393,7 @@ static ssize_t scaling_store(struct class *cla, struct class_attribute *attr,
 
 static ssize_t aspect_mode_show(struct class *cla, struct class_attribute *attr,
                             char *buf) {
-    ssize_t size;
-    char tmp_buf[1024];
-
-    print_aspect_mode(tmp_buf, 1024);
-    size = sprintf(buf, "%s\n", tmp_buf);
-
-    return size;
+    return 0;
 }
 
 static ssize_t aspect_mode_store(struct class *cla, struct class_attribute *attr,
