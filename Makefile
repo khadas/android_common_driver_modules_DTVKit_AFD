@@ -67,7 +67,7 @@ CONFIGS_BUILD := -Wno-undef -Wno-pointer-sign \
 
 KBUILD_CFLAGS_MODULE += $(GKI_EXT_MODULE_PREDEFINE)
 
-afd_module-objs = $(SUBDIR)/AFDparse.o \
+afd_module-objs = $(SUBDIR)/afd_parse.o \
 				  $(SUBDIR)/vtc.o \
 				  $(SUBDIR)/vtm.o \
 				  afd_main.o

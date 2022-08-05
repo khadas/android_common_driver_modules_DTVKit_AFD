@@ -24,6 +24,7 @@
 
 
 #include <linux/amlogic/major.h>
+#include <linux/cdev.h>
 #include <linux/ctype.h>
 #include <linux/errno.h>
 #include <linux/fs.h>
@@ -39,19 +40,21 @@
 #include <linux/slab.h>
 #include <linux/compat.h>
 
-#include "AFD/AFDparse.h"
+#include "AFD/afd_parse.h"
 #include "AFD/vtm.h"
 #include "afd_internal.h"
 
 #define DRV_NAME "afd_module"
-#define DEV_NAME "afd_module"
+#define DEV_NAME "aml_afd"
 #define BUS_NAME "afd_module"
 #define CLS_NAME "afd_module"
 
 static struct device *afd_module_dev;
 static dev_t aml_afd_devno;
+static struct cdev *aml_afd_cdevp;
 
-static char afd_version_str[] = "AFD module: v2022.07.26a";
+
+static char afd_version_str[] = "AFD module: v2022.07.29c";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
 
@@ -188,7 +191,7 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
         return ret;
     }
 
-    afd = getaf((unsigned char *)in->ud_param, &inst_id, &vpts);
+    afd = getAfdFromMetaInfo((unsigned char *)in->ud_param, &inst_id, &vpts);
     vt = find_vtc_inst(inst_id);
     //for old path devices, decoder maybe has no instance info,
     //we will re-try to find path 0 vtc for main path
@@ -221,8 +224,8 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     frame_info.screen_height = in->disp_info.y_end - in->disp_info.y_start;
     aspect = getAspect(in->video_ar.numerator, in->video_ar.denominator);
     AFDHandle(vt_context, &frame_info, aspect, afd);
-    crop = getInrectangle(vt_context);
-    disp = getOutrectangle(vt_context);
+    crop = getInRectangle(vt_context);
+    disp = getOutRectangle(vt_context);
 
     out->afd_enable = checkInScaling(vt_context);
     out->crop_info.top = crop.top;
@@ -474,30 +477,168 @@ static int afd_module_release(struct inode *inode, struct file *file) {
     return 0;
 }
 
+static void try_create_vtc(int path, int inst_id) {
+    S_VT_CONVERSION_STATE* vt_context = NULL;
+    VT_NODE_t *vt = create_vtc(path);
+
+    if (vt)
+        vt->inst_id = inst_id;
+    vt_context = vt ? &(vt->vtc) : NULL;
+    if (vt_context) VT_Enter(vt_context);
+}
+
+static void try_release_vtc(int path) {
+    S_VT_CONVERSION_STATE* vt_context = NULL;
+    VT_NODE_t *vt = find_vtc(path);
+
+    vt_context = vt ? &(vt->vtc) : NULL;
+    if (vt_context) VT_Leave(vt_context);
+    if (release_vtc(path) != path) {
+        pr_err("[AFD]: %s- failed to release %d\n", __func__, path);
+    }
+}
+
+static void try_apply_scaling(struct afd_ctl_scaling_t *s) {
+    VT_NODE_t *vt;
+    S_RECTANGLE rect;
+    S_VT_CONVERSION_STATE* vt_context = NULL;
+
+    if (s) {
+        rect.left = s->scaling.scaling_rect.a;
+        rect.top = s->scaling.scaling_rect.b;
+        rect.width = s->scaling.scaling_rect.c;
+        rect.height = s->scaling.scaling_rect.d;
+        vt = create_vtc(s->path);//find or create
+        if (vt) {
+            vt_context = vt ? &(vt->vtc) : NULL;
+            if (vt_context) {
+                if (s->scaling.type == SCALING_APP) {
+                    VT_SetAppScaling(vt_context, &rect, s->scaling.resolution_width, s->scaling.resolution_height);
+                } else if (s->scaling.type == SCALING_MHEG) {
+                    VT_SetMhegScaling(vt_context, &rect, s->scaling.resolution_width, s->scaling.resolution_height);
+                } else {
+                    VT_DisableScalingMode(vt_context);
+                }
+            }
+        }
+    }
+}
+
+static void try_apply_overscan(struct afd_ctl_overscan_t * ops) {
+    S_VT_OVERSCANS_t newOverscan;
+
+    if (ops) {
+        memcpy(&(newOverscan.uhd), &(ops->uhd_overscan), sizeof(S_VT_CROP_t));
+        memcpy(&(newOverscan.fhd), &(ops->fhd_overscan), sizeof(S_VT_CROP_t));
+        memcpy(&(newOverscan.hd), &(ops->hd_overscan), sizeof(S_VT_CROP_t));
+        memcpy(&(newOverscan.sd), &(ops->sd_overscan), sizeof(S_VT_CROP_t));
+        VT_Set_Global_Overscan(&newOverscan);
+    }
+}
+
+static void get_vtc_state(int path, struct afd_recv_state_t *state_arg) {
+    S_VT_CONVERSION_STATE* vt_context = NULL;
+    VT_NODE_t *vt = find_vtc(path);
+    S_RECTANGLE tmp_rect;
+
+    vt_context = vt ? &(vt->vtc) : NULL;
+    if (vt_context) {
+        state_arg->valid = 1;
+        state_arg->path = path;
+        state_arg->instance_id = vt->inst_id;
+        state_arg->enable = vt_context->afd_enabled;
+        state_arg->aspect = vt_context->alignment;
+        state_arg->video_aspect = vt_context->video_aspect_ratio;
+        state_arg->afd_value = vt_context->afd;
+        state_arg->scaling.type = vt_context->scaling_mode;
+        state_arg->scaling.scaling_rect.a = getScalingRect(vt_context).left;
+        state_arg->scaling.scaling_rect.b = getScalingRect(vt_context).top;
+        state_arg->scaling.scaling_rect.c = getScalingRect(vt_context).width;
+        state_arg->scaling.scaling_rect.d = getScalingRect(vt_context).height;
+        state_arg->scaling.resolution_width = vt_context->resolution_width;
+        state_arg->scaling.resolution_height = vt_context->resolution_height;
+        state_arg->screen_width = vt_context->screen_width;
+        state_arg->screen_height = vt_context->screen_height;
+        state_arg->video_width = vt_context->video_width;
+        state_arg->video_height = vt_context->video_height;
+        tmp_rect = getInRectangle(vt_context);
+        state_arg->video_out.a = tmp_rect.left;
+        state_arg->video_out.b = tmp_rect.top;
+        state_arg->video_out.c = tmp_rect.width;
+        state_arg->video_out.d = tmp_rect.height;
+        tmp_rect = getOutRectangle(vt_context);
+        state_arg->display_out.a = tmp_rect.left;
+        state_arg->display_out.b = tmp_rect.top;
+        state_arg->display_out.c = tmp_rect.width;
+        state_arg->display_out.d = tmp_rect.height;
+    } else
+        state_arg->valid = 0;
+}
+
 static long afd_module_ioctl(struct file *file, unsigned int cmd, ulong arg) {
     long ret = 0;
-    struct afd_ctl *user_argp = (void __user *)arg;
-    struct afd_ctl argp;
-
-    if (IS_ERR_OR_NULL(user_argp)) return -EINVAL;
-    memset(&argp, 0, sizeof(struct afd_ctl));
+    int path, tmp, i;
+    void* user_argp = (void __user *)arg;
+    int path_list[MAX_PLAYER_INSTANCES];
+    struct afd_ctl_create_t create_arg;
+    struct afd_ctl_scaling_t scaling_arg;
+    struct afd_recv_list_t list_arg;
+    struct afd_ctl_overscan_t overscan_arg;
+    struct afd_recv_state_t state_arg;
 
     switch (cmd) {
-        case AFD_IOCTL_CMD_SET: {
-            ret = copy_from_user(argp.name, user_argp->name,
-                                 sizeof(argp.name) - 1);
-            argp.name[sizeof(argp.name) - 1] = '\0';
-            ret |=
-                copy_from_user(argp.val, user_argp->val, sizeof(argp.val) - 1);
-            argp.val[sizeof(argp.val) - 1] = '\0';
-            if (ret)
-                ret = -EINVAL;
-            else
-                ret = 0;
+        case AFD_IOCTl_CREATE_CONTEXT: {
+            if (copy_from_user(&create_arg, (struct afd_ctl_create_t *)user_argp,
+                sizeof(struct afd_ctl_create_t)))
+                return -EINVAL;
+            try_create_vtc(create_arg.path, create_arg.instance_id);
         } break;
-        case AFD_IOCTL_CMD_GET:
-            /* just a test */
-            break;
+        case AFD_IOCTL_RELEASE_CONTEXT: {
+            if (copy_from_user(&path, (int *)user_argp, sizeof(int)))
+                return -EINVAL;
+            try_release_vtc(path);
+        } break;
+        case AFD_IOCTL_SET_ASPECT: {
+            if (copy_from_user(&tmp, (int *)user_argp, sizeof(int)))
+                return -EINVAL;
+            apply_aspect(tmp);
+        } break;
+        case AFD_IOCTL_SET_SCALE_TYPE: {
+            if (copy_from_user(&scaling_arg, (struct afd_ctl_scaling_t *)user_argp,
+                sizeof(struct afd_ctl_scaling_t)))
+                return -EINVAL;
+            try_apply_scaling(&scaling_arg);
+        } break;
+        case AFD_IOCTL_GET_PATHS: {
+            if (copy_from_user(&list_arg, (struct afd_recv_list_t *)user_argp,
+                sizeof(struct afd_recv_list_t)))
+                return -EINVAL;
+            memset(path_list, -1, sizeof(path_list));
+            tmp = (int)get_vtc_paths(path_list, MAX_PLAYER_INSTANCES);
+            list_arg.size = tmp;
+            if (tmp) {
+                for (i =0;i < tmp; i++) {
+                    if (i < sizeof(list_arg.list))
+                        list_arg.list[i] = path_list[i];
+                }
+            }
+            if (copy_to_user(user_argp, &list_arg, sizeof(struct afd_recv_list_t)))
+                return -EFAULT;
+        } break;
+        case AFD_IOCTL_SET_OVERSCAN: {
+            if (copy_from_user(&overscan_arg, (struct afd_ctl_overscan_t *)user_argp,
+                sizeof(struct afd_ctl_overscan_t)))
+                return -EINVAL;
+            try_apply_overscan(&overscan_arg);
+        } break;
+        case AFD_IOCTL_GET_STATE: {
+            if (copy_from_user(&state_arg, (struct afd_recv_state_t *)user_argp,
+                sizeof(struct afd_recv_state_t)))
+                return -EINVAL;
+            get_vtc_state(state_arg.path, &state_arg);
+            if (copy_to_user(user_argp, &state_arg, sizeof(struct afd_recv_state_t)))
+                return -EFAULT;
+        } break;
         default:
             return -EINVAL;
     }
@@ -541,7 +682,28 @@ static int afd_drv_init(void) {
         class_unregister(&afd_module_class);
         return error;
     }
-    afd_module_dev = device_create(&afd_module_class, NULL, MKDEV(aml_afd_devno, 0),
+
+    aml_afd_cdevp = kmalloc(sizeof(struct cdev), GFP_KERNEL);
+    if (!aml_afd_cdevp) {
+        pr_err("aml_afd_cdev: failed to allocate memory\n");
+        unregister_chrdev_region(aml_afd_devno, 1);
+        class_unregister(&afd_module_class);
+        return -ENOMEM;
+    }
+
+    cdev_init(aml_afd_cdevp, &afd_module_fops);
+    aml_afd_cdevp->owner = THIS_MODULE;
+    error = cdev_add(aml_afd_cdevp, aml_afd_devno, 1);
+    if (error) {
+        pr_err("aml_afd_cdev: failed to add cdev\n");
+        unregister_chrdev_region(aml_afd_devno, 1);
+        cdev_del(aml_afd_cdevp);
+        kfree(aml_afd_cdevp);
+        class_unregister(&afd_module_class);
+        return error;
+    }
+
+    afd_module_dev = device_create(&afd_module_class, NULL, MKDEV(MAJOR(aml_afd_devno), 0),
                                   NULL, DEV_NAME);
 
     if (IS_ERR(afd_module_dev)) {
@@ -557,6 +719,8 @@ static int afd_drv_init(void) {
 
 static void afd_drv_exit(void) {
     unregister_chrdev_region(aml_afd_devno, 1);
+    cdev_del(aml_afd_cdevp);
+    kfree(aml_afd_cdevp);
     class_unregister(&afd_module_class);
 }
 

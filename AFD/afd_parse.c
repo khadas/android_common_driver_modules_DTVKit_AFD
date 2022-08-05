@@ -23,7 +23,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "AFDparse.h"
+#include "afd_parse.h"
 
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -130,7 +130,7 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
     return af;
 }
 
-uint8_t getaf(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
+uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
     uint8_t mAf = 0;
     uint8_t *pd = rawData;
     mAf = processData(pd, inst_id, vpts);

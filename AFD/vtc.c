@@ -27,6 +27,7 @@
  * INCLUDE FILES    *
  ********************/
 #include <linux/kernel.h>
+#include <linux/string.h>
 #include "vtc.h"
 
 #ifndef NULL
@@ -51,6 +52,8 @@
 #define HD_HEIGHT 720
 #define FHD_WIDTH 1920
 #define FHD_HEIGHT 1080
+
+static S_VT_OVERSCANS_t mVtOverscan;
 
 /*******************
  * STATIC DATA      *
@@ -273,6 +276,12 @@ static S_VT_FRACT_RECT MakeRectangle(int32_t left, int32_t top, int32_t width,
 /***********************
  * FUNCTION DEFINITIONS *
  ************************/
+
+void VT_Set_Global_Overscan(S_VT_OVERSCANS_t *overscan) {
+    if (overscan) {
+        memcpy(&mVtOverscan, overscan, sizeof(S_VT_OVERSCANS_t));
+    }
+}
 
 void VT_Enter(void *context) {
     S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
@@ -545,7 +554,7 @@ static void Recalculate(S_VT_CONVERSION_STATE *state) {
  *           the state
  *
  * @param    state - current state of the system
- * @param    transform - The tranformation matrix
+ * @param    transform - The transformation matrix
  * @param    clip_transform - Transformation matrix for clipping region
  * @return   The transformation type that was chosen
  ****************************************************************************/
@@ -623,7 +632,7 @@ static E_FORMAT_CONVERSION GetVideoTransformation(S_VT_CONVERSION_STATE *state,
  *           in the state
  *
  * @param    state - current state of the system
- * @param    transform - The tranformation matrix
+ * @param    transform - The transformation matrix
  * @param    clip_transform - Transformation matrix for clipping region
  * @return   The transformation type that was chosen
  ****************************************************************************/
@@ -1237,7 +1246,7 @@ static void VTC_SceneArScaling(S_VT_CONVERSION_STATE *state,
 
 /*!**************************************************************************
  * @brief   Compose a transformation from the presentation coordinates to
- *          screen coordinateswith the given transformation.
+ *          screen coordinates with the given transformation.
  * @param   state - conversion state
  * @param   current - the current transformation matrix
  ****************************************************************************/
@@ -1737,8 +1746,6 @@ static void Scale_HbbToScreen(S_VT_CONVERSION_STATE *state,
 
 static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
                             int32_t height, S_VT_MATRIX *transform) {
-    // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
-
     ASSERT(state);
 
     transform->a = MakeFraction(3, 4);
@@ -1749,8 +1756,6 @@ static void Scale_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
 
 static void Scale_4_3_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
                            int32_t height, S_VT_MATRIX *transform) {
-    // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
-
     ASSERT(state);
 
     transform->a = MakeFraction(1, 1);
@@ -1791,8 +1796,6 @@ static void Scale_4_3_Centre(S_VT_CONVERSION_STATE *state, int32_t width,
 
 static void Scale_16_9_Letterbox(S_VT_CONVERSION_STATE *state, int32_t width,
                                  int32_t height, S_VT_MATRIX *transform) {
-    // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
-
     ASSERT(state);
 
     transform->a = MakeFraction(1, 1);
@@ -1813,8 +1816,6 @@ static void Scale_14_9_Letterbox(S_VT_CONVERSION_STATE *state, int32_t width,
 
 static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, int32_t width,
                                int32_t height, S_VT_MATRIX *transform) {
-    // USE_UNWANTED_PARAM(width);//unknown macro-chenfei.dou
-
     ASSERT(state);
 
     transform->a = MakeFraction(4, 3);
@@ -2006,7 +2007,7 @@ void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
     }
 }
 
-S_RECTANGLE getInrectangle(void *context) {
+S_RECTANGLE getInRectangle(void *context) {
     S_RECTANGLE input;
     S_VT_CONVERSION_STATE *state;
     InitRect(&input, 0, 0, 0, 0);
@@ -2015,10 +2016,33 @@ S_RECTANGLE getInrectangle(void *context) {
 
     state = (S_VT_CONVERSION_STATE *)context;
     input = state->input_rectangle;
+    if (!checkInScaling(state)) return input;
+
+    if (state->video_width > 1920 || state->video_height > 1080) {
+        input.top += mVtOverscan.uhd.vs;
+        input.left += mVtOverscan.uhd.hs;
+        input.width -= (mVtOverscan.uhd.hs + mVtOverscan.uhd.re);
+        input.height -= (mVtOverscan.uhd.vs + mVtOverscan.uhd.be);
+    } else if (state->video_width == 1920 && state->video_height == 1080) {
+        input.top += mVtOverscan.fhd.vs;
+        input.left += mVtOverscan.fhd.hs;
+        input.width -= (mVtOverscan.fhd.hs + mVtOverscan.fhd.re);
+        input.height -= (mVtOverscan.fhd.vs + mVtOverscan.fhd.be);
+    } else if (state->video_width > SD_WIDTH) {
+        input.top += mVtOverscan.hd.vs;
+        input.left += mVtOverscan.hd.hs;
+        input.width -= (mVtOverscan.hd.hs + mVtOverscan.hd.re);
+        input.height -= (mVtOverscan.hd.vs + mVtOverscan.hd.be);
+    } else if (state->video_width <= SD_WIDTH) {
+        input.top += mVtOverscan.sd.vs;
+        input.left += mVtOverscan.sd.hs;
+        input.width -= (mVtOverscan.sd.hs + mVtOverscan.sd.re);
+        input.height -= (mVtOverscan.sd.vs + mVtOverscan.sd.be);
+    }
     return input;
 }
 
-S_RECTANGLE getOutrectangle(void *context) {
+S_RECTANGLE getOutRectangle(void *context) {
     S_RECTANGLE output;
     S_VT_CONVERSION_STATE *state;
     InitRect(&output, 0, 0, 0, 0);
@@ -2100,7 +2124,10 @@ bool checkInScaling(void *context) {
 }
 
 void print_vt_state(void *context, char* buf, int count) {
+    S_RECTANGLE crop;
     S_VT_CONVERSION_STATE *state = (S_VT_CONVERSION_STATE *)context;
+
+    crop = getInRectangle(state);
     snprintf(buf, count, "  enable : %d\n"
                          "  aspect : %d(0 auto, 1 4:3, 2 16:9, 3 14:9, 4 zoom, 5:cus)\n"
                          "  value  : %d\n"
@@ -2109,7 +2136,7 @@ void print_vt_state(void *context, char* buf, int count) {
                          "  res    : %d %d\n"
                          "  video  : %d %d\n"
                          "  screen : %d %d\n"
-                         "  vaspect: %d(0 4:3, 1 16:9 255 und)\n"
+                         "  v ar   : %d(0 4:3, 1 16:9 255 und)\n"
                          "  v out  : %d %d %d %d\n"
                          "  dis out: %d %d %d %d\n",
                          state->afd_enabled,
@@ -2122,8 +2149,7 @@ void print_vt_state(void *context, char* buf, int count) {
                          state->video_width, state->video_height,
                          state->screen_width, state->screen_height,
                          state->video_aspect_ratio,
-                         state->input_rectangle.left, state->input_rectangle.top,
-                         state->input_rectangle.width, state->input_rectangle.height,
+                         crop.left, crop.top, crop.width, crop.height,
                          state->output_rectangle.left, state->output_rectangle.top,
                          state->output_rectangle.width, state->output_rectangle.height);
 }

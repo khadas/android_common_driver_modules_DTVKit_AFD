@@ -28,26 +28,24 @@
 
 #include <linux/types.h>
 
+#define SD_OVERSCAN_H 22
+#define SD_OVERSCAN_V 14
+#define HD_OVERSCAN_H 42
+#define HD_OVERSCAN_V 22
 
-#ifndef NO_STDINT_H
-//typedef unsigned char uint8_t;
-//typedef unsigned short uint16_t;
-//typedef signed char int8_t;
-//typedef signed short int16_t;
-//typedef unsigned long uint32_t;
-//typedef signed long int32_t;
-//typedef unsigned long long uint64_t;
-//typedef bool bool;
-#else
-//typedef uint8_t uint8_t;
-//typedef int8_t int8_t;
-//typedef uint16_t uint16_t;
-//typedef int16_t int16_t;
-//typedef uint32_t uint32_t;
-//typedef int32_t int32_t;
-//typedef uint64_t uint64_t;
-//typedef bool bool;
-#endif
+typedef struct {
+    int hs;
+    int vs;
+    int re;
+    int be;
+} S_VT_CROP_t;
+
+typedef struct {
+    S_VT_CROP_t uhd;
+    S_VT_CROP_t fhd;
+    S_VT_CROP_t hd;
+    S_VT_CROP_t sd;
+} S_VT_OVERSCANS_t;
 
 typedef struct s_vt_options {
     bool mheg_required;
@@ -109,15 +107,6 @@ typedef enum {
     ASPECT_MODE_ZOOM,
     ASPECT_MODE_CUSTOM,
 } E_VIDEO_ASPECT_MODE;
-
-/*typedef enum
-{
-    SD_WIDTH,
-    SD_HEIGHT,
-    HD_WIDTH,
-    HD_HEIGHT,
-} E_VIDEO_PARM;//undeclared value,temporary addition-chenfei.dou
-*/
 
 typedef struct {
     uint8_t afd;
@@ -207,6 +196,7 @@ typedef struct s_conversion_state {
     S_RECTANGLE input_rectangle, output_rectangle;
 } S_VT_CONVERSION_STATE;
 
+void VT_Set_Global_Overscan(S_VT_OVERSCANS_t *overscan);
 void VT_Enter(void *context);
 void VT_Leave(void *context);
 void VT_Rest(S_VT_CONVERSION_STATE* vtc);
@@ -275,12 +265,12 @@ void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
  * @brief    get input_rectangle /sys/class/video/crop
  * @param    context - transformation calculator context
  ****************************************************************************/
-S_RECTANGLE getInrectangle(void *context);
+S_RECTANGLE getInRectangle(void *context);
 /*!**************************************************************************
  * @brief    get out_rectangle /sys/class/video/axis
  * @param    context - transformation calculator context
  ****************************************************************************/
-S_RECTANGLE getOutrectangle(void *context);
+S_RECTANGLE getOutRectangle(void *context);
 /*!**************************************************************************
  * @brief    get current scaling rectangle
  * @param    context - transformation calculator context
@@ -292,7 +282,6 @@ S_RECTANGLE getScalingRect(void *context);
  ****************************************************************************/
 bool checkInScaling(void *context);
 void print_vt_state(void *context, char* buf, int count);
-
 
 #ifdef __cplusplus
 }

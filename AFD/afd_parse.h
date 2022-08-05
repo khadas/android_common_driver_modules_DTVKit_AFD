@@ -101,7 +101,7 @@ typedef enum {
     VFORMAT_AVS2 = 15,
     VFORMAT_AV1 = 16,
     VFORMAT_MAX = 9999999,
-} vformat_t;  // defined in <vcodec.h> ,move to this file-chenfei.dou
+} vformat_t;
 
 struct userdata_meta_info_t {
     uint32_t poc_number;
@@ -148,7 +148,7 @@ struct userdata_meta_info_t {
     uint32_t flags;
     uint32_t vpts; /*video frame pts*/
     /******************************************
-    0: pts is invalid, please use duration to calcuate
+    0: pts is invalid, please use duration to calculate
     1: pts is valid
     ******************************************/
     uint32_t vpts_valid;
@@ -208,10 +208,10 @@ uint8_t processH264Data(uint8_t *data, int len);
 /*!**************************************************************************
  * @brief    get afd value
  * @param    rawdata - user data include afd info
- * @Param    inst_id - pionter to store inst_id
- * @Param    vpts    - pionter to store vpts
+ * @Param    inst_id - pointer to store inst_id
+ * @Param    vpts    - pointer to store vpts
  * @return afd value ,if return 255 , means can't get afd value
  ****************************************************************************/
-uint8_t getaf(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
+uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
 
 #endif  // AMCODEC_USERDATA_DEVICE_H

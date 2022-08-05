@@ -26,7 +26,7 @@
 #include <linux/slab.h>
 #include "vtc.h"
 
-#define MAX_PLAYER_INSTS 6
+#define MAX_PLAYER_INSTANCES 6
 
 typedef struct vt_context {
     int path;
@@ -36,7 +36,7 @@ typedef struct vt_context {
 
 typedef struct {
     E_VIDEO_ASPECT_MODE mAspectMode;
-    VT_NODE_t vtns[MAX_PLAYER_INSTS];
+    VT_NODE_t vs[MAX_PLAYER_INSTANCES];
 } VT_CONTEXTS_t;
 
 void init_vt_context(void);
@@ -45,6 +45,7 @@ int release_vtc(int path);
 void* find_vtc(int path);
 void* find_vtc_inst(int inst_id);
 void apply_aspect(int mode);
+unsigned int  get_vtc_paths(int* array, unsigned int size);
 
 void print_afd_value(char *buf, int count, int debug_val);
 void print_vt_states(char *buf, int count);
