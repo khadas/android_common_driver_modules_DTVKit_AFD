@@ -2081,10 +2081,10 @@ S_RECTANGLE getScalingRect(void *context) {
 int getAspect(int numerator, int denominator) {
     int aspect = ASPECT_UNDEFINED;
 
-    if (numerator == 4 && denominator == 3) {
-        aspect = ASPECT_RATIO_4_3;
-    } else if (numerator == 16 && denominator == 9) {
+    if ((numerator * 11 <= denominator * 20) && (numerator * 9 >= denominator * 16)) {
         aspect = ASPECT_RATIO_16_9;
+    } else if ((numerator * 11 <= denominator * 15) && (numerator * 3 >= denominator * 4)) {
+        aspect = ASPECT_RATIO_4_3;
     }
 
     return aspect;
