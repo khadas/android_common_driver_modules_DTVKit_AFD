@@ -74,6 +74,8 @@ static const S_AFD_TRANS afd_table[] = {
      FORMAT_CONVERSION_PILLAR_BOX},
     {1, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_PANSCAN},
+    {1, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX_4_3},
 
     {2, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_ZOOM_4_3},
@@ -88,6 +90,8 @@ static const S_AFD_TRANS afd_table[] = {
      FORMAT_CONVERSION_PANSCAN},
     {3, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX_14_9},
+    {3, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX_14_9},
 
     {5, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_ZOOM_14_9},
@@ -252,6 +256,12 @@ static void Scale_CentreCutOut(S_VT_CONVERSION_STATE *state, int32_t width,
                                int32_t height, S_VT_MATRIX *transform);
 
 static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform);
+
+static void Scale_4_3_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform);
+
+static void Scale_14_9_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
                             int32_t height, S_VT_MATRIX *transform);
 
 static void UpdateResolution(S_VT_CONVERSION_STATE *state);
@@ -542,6 +552,27 @@ static void Recalculate(S_VT_CONVERSION_STATE *state) {
     VTC_FractRectangleToRectangle(&input, &input_rectangle);
     VTC_FractRectangleToRectangle(&output, &output_rectangle);
 
+    if (state->video_aspect_ratio == ASPECT_RATIO_16_9) {
+        if (state->afd == 1) {
+            //4:3 pillarbox with 16:9 frame
+            //x = (16 - 12)/2 = 2   2/16
+            int crop_x = state->video_width/9;
+            input_rectangle.left += crop_x;
+            input_rectangle.width -= crop_x * 2;
+        } else if (state->afd == 3) {
+            //14:9 pillarbox with 16:9 frame
+            //x = (16 - 14)/2   1/16
+            int crop_x = state->video_width/21;
+            input_rectangle.left += crop_x;
+            input_rectangle.width -= crop_x * 2;
+        } else if (state->afd == 5) {
+            //4:3 pillarbox shoot to 14:9 with 16:9 frame
+            //x = (16 - 14)/2   1/16
+            int crop_x = state->video_width/9;
+            input_rectangle.left += crop_x;
+            input_rectangle.width -= crop_x * 2;
+        }
+    }
     state->input_rectangle = input_rectangle;
     state->output_rectangle = output_rectangle;
     state->wss = temp_wss;
@@ -1087,6 +1118,14 @@ static E_FORMAT_CONVERSION VTC_AfdScaling(S_VT_CONVERSION_STATE *state,
 
         case FORMAT_CONVERSION_CENTRE_4_3:
             Scale_4_3_Centre(state, state->resolution_width,
+                             state->resolution_height, &transform);
+            break;
+        case FORMAT_CONVERSION_PILLAR_BOX_4_3:
+            Scale_4_3_Pillarbox(state, state->resolution_width,
+                             state->resolution_height, &transform);
+            break;
+        case FORMAT_CONVERSION_PILLAR_BOX_14_9:
+            Scale_14_9_Pillarbox(state, state->resolution_width,
                              state->resolution_height, &transform);
             break;
 
@@ -1828,10 +1867,30 @@ static void Scale_16_9_Zoom(S_VT_CONVERSION_STATE *state, int32_t width,
                             int32_t height, S_VT_MATRIX *transform) {
     ASSERT(state);
 
-    transform->a = MakeFraction(7, 6);
-    transform->b = MakeFraction(-width, 12);
+    transform->a = MakeFraction(7, 8);
+    transform->b = MakeFraction(width, 16);
     transform->c = MakeFraction(7, 6);
-    transform->d = MakeFraction(-height, 12);
+    transform->d = MakeFraction(-height, 14);
+}
+
+static void Scale_4_3_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform) {
+    ASSERT(state);
+
+    transform->a = MakeFraction(3, 4);
+    transform->b = MakeFraction(width, 8);
+    transform->c = MakeFraction(1, 1);
+    transform->d = MakeFraction(0, 1);
+}
+
+static void Scale_14_9_Pillarbox(S_VT_CONVERSION_STATE *state, int32_t width,
+                            int32_t height, S_VT_MATRIX *transform) {
+    ASSERT(state);
+
+    transform->a = MakeFraction(7, 8);
+    transform->b = MakeFraction(width, 16);
+    transform->c = MakeFraction(1, 1);
+    transform->d = MakeFraction(0, 1);
 }
 
 static void UpdateResolution(S_VT_CONVERSION_STATE *state) {
@@ -2039,6 +2098,7 @@ S_RECTANGLE getInRectangle(void *context) {
         input.width -= (mVtOverscan.sd.hs + mVtOverscan.sd.re);
         input.height -= (mVtOverscan.sd.vs + mVtOverscan.sd.be);
     }
+
     return input;
 }
 

@@ -54,7 +54,7 @@ static dev_t aml_afd_devno;
 static struct cdev *aml_afd_cdevp;
 
 
-static char afd_version_str[] = "AFD module: v2022.08.09a";
+static char afd_version_str[] = "AFD module: v2022.09.22b";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
 
