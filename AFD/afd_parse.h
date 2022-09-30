@@ -29,7 +29,7 @@
 #include <linux/types.h>
 #include <linux/slab.h>
 
-#define MAX_CC_DATA_LEN (1024 * 5 + 4)
+#define MAX_CC_DATA_LEN (1024 * 5)
 
 //#define IS_H264(p)  ((p[0] == 0xb5 && p[3] == 0x47 && p[4] == 0x41 && p[5] ==
 //0x39 && p[6] == 0x34)) #define IS_DIRECTV(p)   ((p[0] == 0xb5 && p[1] == 0x00
@@ -200,7 +200,7 @@ struct CCData {
 };
 
 //static void aml_swap_data(uint8_t *user_data, int ud_size);
-uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
+uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug);
 userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len);
 uint8_t processMpegData(uint8_t *data, int len);
 uint8_t processH264Data(uint8_t *data, int len);
@@ -212,6 +212,6 @@ uint8_t processH264Data(uint8_t *data, int len);
  * @Param    vpts    - pointer to store vpts
  * @return afd value ,if return 255 , means can't get afd value
  ****************************************************************************/
-uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts);
+uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug);
 
 #endif  // AMCODEC_USERDATA_DEVICE_H

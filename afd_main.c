@@ -54,7 +54,7 @@ static dev_t aml_afd_devno;
 static struct cdev *aml_afd_cdevp;
 
 
-static char afd_version_str[] = "AFD module: v2022.09.22b";
+static char afd_version_str[] = "AFD module: v2022.09.22e";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
 
@@ -191,7 +191,7 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
         return ret;
     }
 
-    afd = getAfdFromMetaInfo((unsigned char *)in->ud_param, &inst_id, &vpts);
+    afd = getAfdFromMetaInfo((unsigned char *)in->ud_param, &inst_id, &vpts, afd_debug_flag);
     vt = find_vtc_inst(inst_id);
     //for old path devices, decoder maybe has no instance info,
     //we will re-try to find path 0 vtc for main path

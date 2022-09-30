@@ -90,7 +90,7 @@ static void aml_swap_data(uint8_t *user_data, int ud_size) {
     }
 }
 
-uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
+uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug) {
     uint8_t af = 0xFF;
     int left = 0, r = 0;
     struct userdata_param_t *ud = (struct userdata_param_t *)rawData;
@@ -99,8 +99,16 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
 
     *inst_id = ud->instance_id;
     *vpts = ud->meta_info.vpts;
-    if (ud->pbuf_addr == NULL || ud->buf_len == 0)
+
+    if (debug)
+        pr_err("[AFD] Got ud, addr:%p, size:%d", ud->pbuf_addr, ud->buf_len);
+
+    if (ud->pbuf_addr && (ud->buf_len <= 0 || ud->buf_len > MAX_CC_DATA_LEN))
+        pr_err("[AFD] Got unexpect ud, addr:%p, size:%d", ud->pbuf_addr, ud->buf_len);
+
+    if (ud->pbuf_addr == NULL || ud->buf_len <= 0) {
         return 0xff;
+    }
 
     pd = kzalloc(MAX_CC_DATA_LEN, GFP_ATOMIC);
     if (!pd) return af;
@@ -130,9 +138,9 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
     return af;
 }
 
-uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts) {
+uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug) {
     uint8_t mAf = 0;
     uint8_t *pd = rawData;
-    mAf = processData(pd, inst_id, vpts);
+    mAf = processData(pd, inst_id, vpts, debug);
     return mAf;
 }
