@@ -103,8 +103,8 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_
     if (debug)
         pr_err("[AFD] Got ud, addr:%p, size:%d", ud->pbuf_addr, ud->buf_len);
 
-    if (ud->pbuf_addr && (ud->buf_len <= 0 || ud->buf_len > MAX_CC_DATA_LEN))
-        pr_err("[AFD] Got unexpect ud, addr:%p, size:%d", ud->pbuf_addr, ud->buf_len);
+    //if (ud->pbuf_addr && (ud->buf_len <= 0 || ud->buf_len > MAX_CC_DATA_LEN))
+    //    pr_err("[AFD] Got unexpect ud, addr:%p, size:%d", ud->pbuf_addr, ud->buf_len);
 
     if (ud->pbuf_addr == NULL || ud->buf_len <= 0) {
         return 0xff;
