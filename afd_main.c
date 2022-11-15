@@ -205,6 +205,9 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
             in->video_ar.numerator, in->video_ar.denominator,
             in->disp_info.x_start, in->disp_info.y_start, in->disp_info.x_end, in->disp_info.y_end);
     }
+    if ((int)(in->disp_info.x_end) == -1 || (int)(in->disp_info.y_end) == -1)
+        return ret;//invalid width or height, skip afd process
+
     vt_context = vt ? &(vt->vtc) : NULL;
     if (!vt_context) return ret;
 
