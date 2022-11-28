@@ -29,7 +29,7 @@
 
 
 #!!This file is for build afd source with kernel source in android p.Please refer to device/amlogic/${PRODUCT}/Kernel.mk
-#!!For the higher android versions (R,S ..), please DONT INCLUDE OR INHERIT this file, please refer to device/amlogic/${PRODUCT}/build.config.meson.*
+#!!For the higher android versions (R,S ..), please Don't INCLUDE OR INHERIT this file, please refer to device/amlogic/${PRODUCT}/build.config.meson.*
 
 #BOARD_VENDOR_KERNEL_MODULES += $(PRODUCT_OUT)/obj/lib_vendor/afd_module.ko
 
