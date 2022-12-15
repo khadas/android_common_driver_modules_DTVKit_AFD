@@ -41,10 +41,10 @@
 //1))
 
 #define IS_AFD(p) \
-    ((p[0] == 0x44) && (p[1] == 0x54) && (p[2] == 0x47) && (p[3] == 0x31))
+    ((p[12] == 0x31) && (p[13] == 0x47) && (p[14] == 0x54) && (p[15] == 0x44))
 #define IS_H264_AFD(p)                                                       \
-    ((p[0] == 0xb5) && (p[3] == 0x44) && (p[4] == 0x54) && (p[5] == 0x47) && \
-     (p[6] == 0x31))
+    ((p[1] == 0x31) && (p[2] == 0x47) && (p[3] == 0x54) && (p[4] == 0x44) && \
+     (p[7] == 0xb5))
 
 enum AM_USERDATA_Mode {
     AM_USERDATA_MODE_CC = 0x1,
@@ -202,8 +202,6 @@ struct CCData {
 //static void aml_swap_data(uint8_t *user_data, int ud_size);
 uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug);
 userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len);
-uint8_t processMpegData(uint8_t *data, int len);
-uint8_t processH264Data(uint8_t *data, int len);
 
 /*!**************************************************************************
  * @brief    get afd value

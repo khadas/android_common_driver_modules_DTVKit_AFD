@@ -31,71 +31,30 @@
 #define UD_SIZE (8 * 1024)
 
 userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len) {
-    userdata_type mType = INVALID_TYPE;
+    userdata_type type = INVALID_TYPE;
+    vformat_t vFormat = VFORMAT_UNKNOWN;
 
-    vformat_t mFormat = (vformat_t)((ud->meta_info.flags & 0x78) >> 3);
-    switch (mFormat) {
+    if (!buf || len < 16) return type;
+
+    vFormat = (vformat_t)((ud->meta_info.flags & 0x78) >> 3);
+    switch (vFormat) {
         case VFORMAT_H264:
-            if (IS_H264_AFD(buf)) mType = H264_AFD_TYPE;
+            if (IS_H264_AFD(buf)) type = H264_AFD_TYPE;
             break;
         case VFORMAT_MPEG12:
-            if (len >= (int)sizeof(aml_ud_header_t)) {
-                aml_ud_header_t *hdr = (aml_ud_header_t *)buf;
-                if (IS_AFD(hdr->atsc_flag)) {
-                    mType = MPEG_AFD_TYPE;
-                }
-            }
+            if (IS_AFD(buf)) type = MPEG_AFD_TYPE;
             break;
         default:
             break;
     }
-    return mType;
-}
-
-uint8_t processMpegData(uint8_t *data, int len) {
-    uint8_t *pd = data;
-    int left = len;
-    uint8_t AF = 0;
-    if (left >= (int)sizeof(aml_ud_header_t)) {
-        aml_ud_header_t *hdr = (aml_ud_header_t *)pd;
-        uint8_t *pafd_hdr = (uint8_t *)hdr->cc_data_start;
-        AM_USERDATA_AFD_t afd = *((AM_USERDATA_AFD_t *)(pafd_hdr));
-        AF = afd.af;
-    }
-    return AF;
-}
-uint8_t processH264Data(uint8_t *data, int len) {
-    uint8_t *pd = data;
-    uint8_t AF = 0;
-
-    AM_USERDATA_AFD_t afd = *((AM_USERDATA_AFD_t *)(pd + 7));
-    AF = afd.af;
-    return AF;
-}
-
-static void aml_swap_data(uint8_t *user_data, int ud_size) {
-    int swap_blocks, i, j, k, m;
-    unsigned char c_temp;
-
-    /* swap byte order */
-    swap_blocks = ud_size >> 3;
-    for (i = 0; i < swap_blocks; i++) {
-        j = i << 3;
-        k = j + 7;
-        for (m = 0; m < 4; m++) {
-            c_temp = user_data[j];
-            user_data[j++] = user_data[k];
-            user_data[k--] = c_temp;
-        }
-    }
+    return type;
 }
 
 uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug) {
     uint8_t af = 0xFF;
-    int left = 0, r = 0;
     struct userdata_param_t *ud = (struct userdata_param_t *)rawData;
     uint8_t *pd = NULL;
-    userdata_type mType;
+    userdata_type uType;
 
     *inst_id = ud->instance_id;
     *vpts = ud->meta_info.vpts;
@@ -106,26 +65,26 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_
     //if (ud->pbuf_addr && (ud->buf_len <= 0 || ud->buf_len > MAX_CC_DATA_LEN))
     //    pr_err("[AFD] Got unexpect ud, addr:%p, size:%d", ud->pbuf_addr, ud->buf_len);
 
-    if (ud->pbuf_addr == NULL || ud->buf_len <= 0) {
+    if (ud->pbuf_addr == NULL || ud->buf_len <= 0 || ud->buf_len < 16) {
         return 0xff;
     }
 
-    pd = kzalloc(MAX_CC_DATA_LEN, GFP_ATOMIC);
-    if (!pd) return af;
-
-    r = ud->buf_len;
-    r = (r > MAX_CC_DATA_LEN) ? MAX_CC_DATA_LEN : r;
-    memcpy(pd, ud->pbuf_addr, r);
-    aml_swap_data(pd + left, r);
-    left += r;
-    mType = checkFormat(ud, pd, left);
-    switch (mType) {
+    pd = ud->pbuf_addr;
+    if (debug) {
+        pr_err("[AFD] ud data: [0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x," \
+                               "0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x]",
+                               pd[0], pd[1], pd[2], pd[3], pd[4], pd[5], pd[6], pd[7],
+                               pd[8], pd[9], pd[10], pd[11], pd[12], pd[13], pd[14], pd[15]);
+        pr_err("[AFD] meta info flags: %u", ud->meta_info.flags);
+    }
+    uType = checkFormat(ud, pd, ud->buf_len);
+    switch (uType) {
         case MPEG_AFD_TYPE: {
-            af = processMpegData(pd, left);
+            af = (pd[10] & 0x0f);
             break;
         }
         case H264_AFD_TYPE: {
-            af = processH264Data(pd, left);
+            af = (pd[15] & 0x0f);
             break;
         }
         case INVALID_TYPE:
@@ -133,7 +92,6 @@ uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_
             break;
         }
     }
-    kfree(pd);
 
     return af;
 }
