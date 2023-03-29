@@ -56,6 +56,10 @@ endif
 endif
 endif
 
+ifeq (5, $(VERSION))
+AFD_BUILD_4_9 := 0
+endif
+
 EXTRA_CFLAGS += -DAFD_BUILD_4_9=$(AFD_BUILD_4_9)
 
 AFD_CONFIGS := CONFIG_AFD_MODULE=m
