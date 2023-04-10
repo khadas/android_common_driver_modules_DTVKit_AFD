@@ -432,22 +432,7 @@ static ssize_t state_store(struct class *cla, struct class_attribute *attr,
     return size;
 }
 
-#if AFD_BUILD_4_9
-static struct class_attribute afd_module_class_attrs[] = {
-    __ATTR(debug, 0664, debug_show, debug_store),
-    __ATTR(value, 0664, value_show, value_store),
-    __ATTR(enable, 0664, enable_show, enable_store),
-    __ATTR(scaling, 0664, scaling_show, scaling_store),
-    __ATTR(aspect_mode, 0664, aspect_mode_show, aspect_mode_store),
-    __ATTR(state, 0664, state_show, state_store),
-    __ATTR_NULL
-};
-
-static struct class afd_module_class = {
-    .name = CLS_NAME,
-    .class_attrs = afd_module_class_attrs,
-};
-#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
 static CLASS_ATTR_RW(debug);
 static CLASS_ATTR_RW(value);
 static CLASS_ATTR_RW(enable);
@@ -468,6 +453,21 @@ ATTRIBUTE_GROUPS(afd_module_class);
 static struct class afd_module_class = {
     .name = CLS_NAME,
     .class_groups = afd_module_class_groups,
+};
+#else
+static struct class_attribute afd_module_class_attrs[] = {
+    __ATTR(debug, 0664, debug_show, debug_store),
+    __ATTR(value, 0664, value_show, value_store),
+    __ATTR(enable, 0664, enable_show, enable_store),
+    __ATTR(scaling, 0664, scaling_show, scaling_store),
+    __ATTR(aspect_mode, 0664, aspect_mode_show, aspect_mode_store),
+    __ATTR(state, 0664, state_show, state_store),
+    __ATTR_NULL
+};
+
+static struct class afd_module_class = {
+    .name = CLS_NAME,
+    .class_attrs = afd_module_class_attrs,
 };
 #endif
 

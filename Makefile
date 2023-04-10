@@ -22,45 +22,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-ifeq ($(KERNEL_A32_SUPPORT), true)
-KERNEL_ARCH := arm
-else
-KERNEL_ARCH := arm64
-endif
 SUBDIR = ./AFD
 #INCLUDE += /usr/include
 #KDIR := $(shell pwd)/$(PRODUCT_OUT)/obj/KERNEL_OBJ/
 #AFD_MODULES := $(shell pwd)/$(PRODUCT_OUT)/obj/afd_module
-
-AFD_BUILD_4_9 := 0
-
-ifeq (4.9, $(TARGET_BUILD_KERNEL_VERSION))
-AFD_BUILD_4_9 := 1
-else
-ifeq (true, $(TARGET_BUILD_KERNEL_5_15))
-#android t + 5.15
-AFD_BUILD_4_9 := 0
-else
-ifneq ($(TARGET_BUILD_KERNEL_4_9),)
-#android r and higher
-ifeq (true, $(TARGET_BUILD_KERNEL_4_9))
-AFD_BUILD_4_9 := 1
-endif
-else
-#android p
-ifneq (true, $(TARGET_BUILD_KERNEL_5_4))
-AFD_BUILD_4_9 := 1
-endif
-endif
-endif
-endif
-
-ifeq (5, $(VERSION))
-AFD_BUILD_4_9 := 0
-endif
-
-EXTRA_CFLAGS += -DAFD_BUILD_4_9=$(AFD_BUILD_4_9)
 
 AFD_CONFIGS := CONFIG_AFD_MODULE=m
 
@@ -83,10 +48,10 @@ out_dir := .
 else
 out_dir := $(O)
 endif
-include $(out_dir)/include/config/auto.conf
+-include $(out_dir)/include/config/auto.conf
 
 modules:
-	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules ARCH=$(KERNEL_ARCH)  "-Wno-error -I$(EXTRA_CFLAGS1) $(CONFIGS_BUILD) $(EXTRA_INCLUDE) $(KBUILD_CFLAGS_MODULE)" $(AFD_CONFIGS)
+	$(MAKE) -C $(KERNEL_SRC) M=$(M) modules ARCH=$(ARCH)  "-Wno-error -I$(EXTRA_CFLAGS1) $(CONFIGS_BUILD) $(EXTRA_INCLUDE) $(KBUILD_CFLAGS_MODULE)" $(AFD_CONFIGS)
 
 all:modules
 
