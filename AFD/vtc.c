@@ -2150,7 +2150,7 @@ int getAspect(int numerator, int denominator) {
 
     if ((numerator * 11 <= denominator * 20) && (numerator * 9 >= denominator * 16)) {
         aspect = ASPECT_RATIO_16_9;
-    } else if ((numerator * 11 <= denominator * 15) && (numerator * 3 >= denominator * 4)) {
+    } else if ((numerator * 11 <= denominator * 18) && (numerator * 3 >= denominator * 4)) {
         aspect = ASPECT_RATIO_4_3;
     }
 
