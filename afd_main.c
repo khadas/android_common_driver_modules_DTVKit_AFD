@@ -196,9 +196,18 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     //for old path devices, decoder maybe has no instance info,
     //we will re-try to find path 0 vtc for main path
     if (!vt) {
-        if (afd_debug_flag) pr_err("[AFD] %s: invalid inst id from decoder, try to use path 0.", __func__);
-        vt = find_vtc(0);
+        vt = find_vtc_inst_by_handle(handle);
+        if (!vt) {
+            if (afd_debug_flag) pr_err("[AFD] %s: invalid inst id from decoder, try to use path 0.", __func__);
+            vt = find_vtc(0);
+        } else {
+            if (afd_debug_flag) pr_err("[AFD] %s: Found vt from handle.", __func__);
+        }
+    } else {
+        if (vt->handle == NULL)
+            vt->handle = handle;
     }
+
     if (afd_debug_flag) {
         pr_err("[AFD] %s: in inst(%u) with afd(%d) and vpts(%u), context: %p,(%d-%d), video ar(%d,%d), display in(%d,%d,%d,%d)",
             __func__, inst_id, (afd & 0x07), vpts, vt, (vt?vt->path:-1), (vt?vt->inst_id:-1),

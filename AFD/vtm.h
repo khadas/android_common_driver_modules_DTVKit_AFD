@@ -32,6 +32,7 @@ typedef struct vt_context {
     int path;
     int inst_id;
     S_VT_CONVERSION_STATE vtc;
+    void * handle;
 }VT_NODE_t;
 
 typedef struct {
@@ -44,6 +45,7 @@ void* create_vtc(int path);
 int release_vtc(int path);
 void* find_vtc(int path);
 void* find_vtc_inst(int inst_id);
+void* find_vtc_inst_by_handle(void * handle);
 void apply_aspect(int mode);
 unsigned int  get_vtc_paths(int* array, unsigned int size);
 

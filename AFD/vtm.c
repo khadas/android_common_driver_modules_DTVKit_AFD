@@ -36,6 +36,7 @@ void init_vt_context(void) {
         mVtContexts.vs[i].path = -1;
         mVtContexts.vs[i].inst_id = -1;
         VT_Rest(&(mVtContexts.vs[i].vtc));
+        mVtContexts.vs[i].handle = NULL;
     }
 
     defaultOverscan.uhd.hs = 0;
@@ -67,6 +68,7 @@ void* create_vtc(int path) {
         if (mVtContexts.vs[i].path == -1) {
             mVtContexts.vs[i].path = path;
             mVtContexts.vs[i].inst_id = 0;
+            mVtContexts.vs[i].handle = NULL;
             VT_Rest(&(mVtContexts.vs[i].vtc));
             VT_SetVideoAlignmentPref(&(mVtContexts.vs[i].vtc), mVtContexts.mAspectMode);
             return &(mVtContexts.vs[i]);
@@ -101,6 +103,19 @@ void* find_vtc_inst(int inst_id) {
     return NULL;
 }
 
+void* find_vtc_inst_by_handle(void * handle) {
+    int i;
+    VT_NODE_t *v = NULL;
+
+    for (i = 0; i < MAX_PLAYER_INSTANCES; i ++) {
+        if (mVtContexts.vs[i].handle == handle) {
+            v = &(mVtContexts.vs[i]);
+            return v;
+        }
+    }
+    return NULL;
+}
+
 int release_vtc(int path) {
     int i;
 
@@ -108,6 +123,7 @@ int release_vtc(int path) {
         if (mVtContexts.vs[i].path == path) {
             mVtContexts.vs[i].path = -1;
             mVtContexts.vs[i].inst_id = -1;
+            mVtContexts.vs[i].handle = NULL;
             VT_Rest(&(mVtContexts.vs[i].vtc));
             return path;
         }
