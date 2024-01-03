@@ -28,6 +28,8 @@
 
 #include <linux/types.h>
 
+#define ENABLE_INTERNAL_OVERSCAN
+
 #define SD_OVERSCAN_H 22
 #define SD_OVERSCAN_V 14
 #define HD_OVERSCAN_H 42

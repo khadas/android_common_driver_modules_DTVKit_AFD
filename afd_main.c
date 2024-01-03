@@ -210,7 +210,7 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
 
     if (afd_debug_flag) {
         pr_err("[AFD] %s: in inst(%u) with afd(%d) and vpts(%u), context: %p,(%d-%d), video ar(%d,%d), display in(%d,%d,%d,%d)",
-            __func__, inst_id, (afd & 0x07), vpts, vt, (vt?vt->path:-1), (vt?vt->inst_id:-1),
+            __func__, inst_id, (afd & 0x0f), vpts, vt, (vt?vt->path:-1), (vt?vt->inst_id:-1),
             in->video_ar.numerator, in->video_ar.denominator,
             in->disp_info.x_start, in->disp_info.y_start, in->disp_info.x_end, in->disp_info.y_end);
     }
@@ -242,8 +242,8 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     out->afd_enable = checkInScaling(vt_context);
     out->crop_info.top = crop.top;
     out->crop_info.left = crop.left;
-    out->crop_info.bottom = crop.top;
-    out->crop_info.right = crop.left;
+    out->crop_info.bottom = in->video_h - crop.height - crop.top;
+    out->crop_info.right = in->video_w - crop.width - crop.left;
 
     out->dst_pos.x_start = in->disp_info.x_start + disp.left;
     out->dst_pos.x_end = in->disp_info.x_start + disp.left + disp.width;

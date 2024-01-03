@@ -59,78 +59,105 @@ static S_VT_OVERSCANS_t mVtOverscan;
  * STATIC DATA      *
  ********************/
 static const S_AFD_TRANS afd_table[] = {
-    {0, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_PILLAR_BOX},
-    {0, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+    {2, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX},
-    {0, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_14_9_LB,
-     FORMAT_CONVERSION_LETTERBOX_14_9},
-    {0, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
-     FORMAT_CONVERSION_PANSCAN},
-    {0, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_LETTERBOX},
-
-    {1, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_PILLAR_BOX},
-    {1, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_PANSCAN},
-    {1, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_PILLAR_BOX_4_3},
-
     {2, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_ZOOM_4_3},
+     FORMAT_CONVERSION_IGNORE},
     {2, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX},
+    {2, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_IGNORE},
 
-    {3, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_ZOOM_14_9},
-    {3, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+    {3, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX_14_9},
-    {3, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
-     FORMAT_CONVERSION_PANSCAN},
+    {3, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX_14_9},
     {3, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX_14_9},
     {3, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_PILLAR_BOX_14_9},
 
-    //afd 4 undefined, we make 4:3 show pillar box in 16:9 display
-    //for better performance
+    {4, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_IGNORE},
     {4, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_PILLAR_BOX},
+     FORMAT_CONVERSION_IGNORE},
     {4, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX},
+    {4, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_IGNORE},
 
-    {5, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+    {8, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX},
+    {8, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+     FORMAT_CONVERSION_LETTERBOX},
+    {8, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_14_9_LB,
+     FORMAT_CONVERSION_LETTERBOX_14_9},
+    {8, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
+     FORMAT_CONVERSION_PANSCAN},
+    {8, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_LETTERBOX},
+
+    {9, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX},
+    {9, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PANSCAN},
+    {9, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX_4_3},
+
+    {10, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_ZOOM_4_3},
+    {10, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_LETTERBOX},
+
+    {11, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_ZOOM_14_9},
-    {5, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+    {11, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+     FORMAT_CONVERSION_LETTERBOX_14_9},
+    {11, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
      FORMAT_CONVERSION_PANSCAN},
-    {5, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_PANSCAN_14_9},
+    {11, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_LETTERBOX_14_9},
+    {11, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX_14_9},
 
-    {6, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_ZOOM_4_3},
-    {6, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
-     FORMAT_CONVERSION_CENTRE_14_9},
-    {6, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+    //afd 4(1100) undefined, we make 4:3 show pillar box in 16:9 display
+    //for better performance
+    {12, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_PILLAR_BOX},
+    {12, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX},
-    {6, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_14_9_LB,
-     FORMAT_CONVERSION_LETTERBOX_14_9},
-    {6, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
+
+    {13, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_ZOOM_14_9},
+    {13, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_PANSCAN},
-    {6, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+    {13, ASPECT_RATIO_16_9, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_ZOOM_14_9},
+
+    {14, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_ZOOM_4_3},
+    {14, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+     FORMAT_CONVERSION_LETTERBOX_14_9},
+    {14, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+     FORMAT_CONVERSION_LETTERBOX},
+    {14, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_14_9_LB,
+     FORMAT_CONVERSION_LETTERBOX_14_9},
+    {14, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
+     FORMAT_CONVERSION_PANSCAN},
+    {14, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_LETTERBOX_14_9},
 
-    {7, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
+    {15, ASPECT_RATIO_4_3, ASPECT_RATIO_16_9, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_ZOOM_4_3},
-    {7, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+    {15, ASPECT_RATIO_4_3, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_CENTRE_4_3},
-    {7, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
+    {15, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_16_9_LB,
      FORMAT_CONVERSION_LETTERBOX},
-    {7, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_14_9_LB,
+    {15, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_14_9_LB,
      FORMAT_CONVERSION_LETTERBOX_14_9},
-    {7, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
+    {15, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_CCO,
      FORMAT_CONVERSION_PANSCAN},
-    {7, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
+    {15, ASPECT_RATIO_16_9, ASPECT_RATIO_4_3, AFD_PREFERENCE_AUTO,
      FORMAT_CONVERSION_PANSCAN}};
 
 /**********************
@@ -519,6 +546,7 @@ static void Recalculate(S_VT_CONVERSION_STATE *state) {
     uint8_t temp_wss;
     S_RECTANGLE input_rectangle, output_rectangle;
     S_VT_FRACT_RECT input, output;
+    S_VT_CROP_t crop_info;
 
     CalculateMhegScaling(state);
 
@@ -559,27 +587,89 @@ static void Recalculate(S_VT_CONVERSION_STATE *state) {
     VTC_FractRectangleToRectangle(&input, &input_rectangle);
     VTC_FractRectangleToRectangle(&output, &output_rectangle);
 
+    //apply overscan and crop
+    crop_info.hs =0;
+    crop_info.vs = 0;
+    crop_info.re = 0;
+    crop_info.be = 0;
+#ifdef ENABLE_INTERNAL_OVERSCAN
+    if (state->video_width > 1920 || state->video_height > 1080) {
+        crop_info.hs = mVtOverscan.uhd.hs;
+        crop_info.vs = mVtOverscan.uhd.vs;
+        crop_info.re = mVtOverscan.uhd.re;
+        crop_info.be = mVtOverscan.uhd.be;
+    } else if (state->video_width == 1920 && state->video_height == 1080) {
+        crop_info.hs = mVtOverscan.fhd.hs;
+        crop_info.vs = mVtOverscan.fhd.vs;
+        crop_info.re = mVtOverscan.fhd.re;
+        crop_info.be = mVtOverscan.fhd.be;
+    } else if (state->video_width > SD_WIDTH) {
+        crop_info.hs = mVtOverscan.hd.hs;
+        crop_info.vs = mVtOverscan.hd.vs;
+        crop_info.re = mVtOverscan.hd.re;
+        crop_info.be = mVtOverscan.hd.be;
+    } else if (state->video_width <= SD_WIDTH) {
+        crop_info.hs = mVtOverscan.sd.hs;
+        crop_info.vs = mVtOverscan.sd.vs;
+        crop_info.re = mVtOverscan.sd.re;
+        crop_info.be = mVtOverscan.sd.be;
+    }
+
+    if (checkInScaling(state)) {
+        input_rectangle.left += crop_info.hs;
+        input_rectangle.top += crop_info.vs;
+        input_rectangle.width -= (crop_info.hs + crop_info.re);
+        input_rectangle.height -= (crop_info.vs + crop_info.be);
+    }
+#endif
+
+    //calculate crop after overscan
     if (state->video_aspect_ratio == ASPECT_RATIO_16_9) {
-        if (state->afd == 1) {
-            //4:3 pillarbox with 16:9 frame
-            //x = (16 - 12)/2 = 2   2/16
-            int crop_x = state->video_width/9;
-            input_rectangle.left += crop_x;
-            input_rectangle.width -= crop_x * 2;
+        if (state->display_aspect_ratio == ASPECT_RATIO_16_9) {
+            if (state->afd == 9) {
+                //4:3 pillarbox with 16:9 frame
+                //x = (16 - 12)/2 = 2   2/16
+                int crop_x = input_rectangle.width/8;
+                input_rectangle.left += crop_x;
+                input_rectangle.width -= crop_x * 2;
+            } else if (state->afd == 11 || state->afd == 3) {
+                //14:9 pillarbox with 16:9 frame
+                //x = (16 - 14)/2   1/16
+                int crop_x = input_rectangle.width/16;
+                input_rectangle.left += crop_x;
+                input_rectangle.width -= crop_x * 2;
+            } else if (state->afd == 13) {
+                //4:3 pillarbox shoot to 14:9 with 16:9 frame
+                //x = (16 - 14)/2   1/16
+                int crop_x = input_rectangle.width/8;
+                input_rectangle.left += crop_x;
+                input_rectangle.width -= crop_x * 2;
+            }
+        }
+    } else if (state->video_aspect_ratio == ASPECT_RATIO_4_3){
+        if (state->afd == 2) {
+            //16:9 top in 4:3 frame
+            input_rectangle.height = input_rectangle.height * 3/4;
         } else if (state->afd == 3) {
-            //14:9 pillarbox with 16:9 frame
-            //x = (16 - 14)/2   1/16
-            int crop_x = state->video_width/21;
-            input_rectangle.left += crop_x;
-            input_rectangle.width -= crop_x * 2;
-        } else if (state->afd == 5) {
-            //4:3 pillarbox shoot to 14:9 with 16:9 frame
-            //x = (16 - 14)/2   1/16
-            int crop_x = state->video_width/9;
-            input_rectangle.left += crop_x;
-            input_rectangle.width -= crop_x * 2;
+            //14:9 top in 4:3 frame
+            input_rectangle.height = input_rectangle.height * 6/7;
+            if (state->display_aspect_ratio == ASPECT_RATIO_4_3) {
+                input_rectangle.left = crop_info.hs;
+                input_rectangle.width = state->video_width - crop_info.hs * 2;
+            }
+        } else if (state->afd == 4) {
+            //20:9 center in 4:3 frame, zoom to 16:9
+            input_rectangle.top += input_rectangle.height /8;
+            input_rectangle.height -= input_rectangle.height /4;
+        } else if (state->afd == 14) {
+            //16:9 Center in 4:3 Frame with 14:9 Shoot and Protect
+            if (state->display_aspect_ratio == ASPECT_RATIO_4_3) {
+                input_rectangle.top += input_rectangle.height /8;
+                input_rectangle.height -= input_rectangle.height /4;
+            }
         }
     }
+
     state->input_rectangle = input_rectangle;
     state->output_rectangle = output_rectangle;
     state->wss = temp_wss;
@@ -2029,8 +2119,8 @@ void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
                E_ASPECT_RATIO frame_aspectratio, uint8_t afd_value) {
     bool changed = FALSE;
     S_VT_CONVERSION_STATE *state;
-    uint8_t afd_new = afd_value & 0x07;
-    //E_ASPECT_RATIO dis_aspect;
+    uint8_t afd_new = afd_value & 0x0f;
+    E_ASPECT_RATIO dis_aspect;
 
     if (context == NULL) return;
 
@@ -2051,11 +2141,11 @@ void AFDHandle(void *context, S_FRAME_DIS_INFO *frame_info,
         state->screen_height = frame_info->screen_height;
         changed = TRUE;
     }
-    //dis_aspect = getDisplayAspect(state->screen_width, state->screen_height);
-    //if (state->display_aspect_ratio != dis_aspect) {
-    //    state->display_aspect_ratio = dis_aspect;
-    //    changed = TRUE;
-    //}
+    dis_aspect = getDisplayAspect(state->screen_width, state->screen_height);
+    if (state->display_aspect_ratio != dis_aspect) {
+        state->display_aspect_ratio = dis_aspect;
+        changed = TRUE;
+    }
     if (state->video_aspect_ratio != frame_aspectratio) {
         state->video_aspect_ratio = frame_aspectratio;
         changed = TRUE;
@@ -2082,29 +2172,6 @@ S_RECTANGLE getInRectangle(void *context) {
 
     state = (S_VT_CONVERSION_STATE *)context;
     input = state->input_rectangle;
-    if (!checkInScaling(state)) return input;
-
-    if (state->video_width > 1920 || state->video_height > 1080) {
-        input.top += mVtOverscan.uhd.vs;
-        input.left += mVtOverscan.uhd.hs;
-        input.width -= (mVtOverscan.uhd.hs + mVtOverscan.uhd.re);
-        input.height -= (mVtOverscan.uhd.vs + mVtOverscan.uhd.be);
-    } else if (state->video_width == 1920 && state->video_height == 1080) {
-        input.top += mVtOverscan.fhd.vs;
-        input.left += mVtOverscan.fhd.hs;
-        input.width -= (mVtOverscan.fhd.hs + mVtOverscan.fhd.re);
-        input.height -= (mVtOverscan.fhd.vs + mVtOverscan.fhd.be);
-    } else if (state->video_width > SD_WIDTH) {
-        input.top += mVtOverscan.hd.vs;
-        input.left += mVtOverscan.hd.hs;
-        input.width -= (mVtOverscan.hd.hs + mVtOverscan.hd.re);
-        input.height -= (mVtOverscan.hd.vs + mVtOverscan.hd.be);
-    } else if (state->video_width <= SD_WIDTH) {
-        input.top += mVtOverscan.sd.vs;
-        input.left += mVtOverscan.sd.hs;
-        input.width -= (mVtOverscan.sd.hs + mVtOverscan.sd.re);
-        input.height -= (mVtOverscan.sd.vs + mVtOverscan.sd.be);
-    }
 
     return input;
 }
@@ -2158,12 +2225,12 @@ int getAspect(int numerator, int denominator) {
 }
 
 int getDisplayAspect(int width, int height) {
-    int aspect = ASPECT_UNDEFINED;
+    int aspect = ASPECT_RATIO_16_9;
 
-    if (width * 3 == height * 4)
+    if ((width * 11 <= height * 18) && (width * 13 >= height * 16)) {
         aspect = ASPECT_RATIO_4_3;
-    else if (width * 9 == height * 14)
-        aspect = ASPECT_RATIO_16_9;
+    }
+
     return aspect;
 }
 
@@ -2204,6 +2271,7 @@ void print_vt_state(void *context, char* buf, int count) {
                          "  video  : %d %d\n"
                          "  screen : %d %d\n"
                          "  v ar   : %d(0 4:3, 1 16:9 255 und)\n"
+                         "  dis ar : %d(0 4:3, 1 16:9)\n"
                          "  v out  : %d %d %d %d\n"
                          "  dis out: %d %d %d %d\n",
                          state->afd_enabled,
@@ -2216,6 +2284,7 @@ void print_vt_state(void *context, char* buf, int count) {
                          state->video_width, state->video_height,
                          state->screen_width, state->screen_height,
                          state->video_aspect_ratio,
+                         state->display_aspect_ratio,
                          crop.left, crop.top, crop.width, crop.height,
                          state->output_rectangle.left, state->output_rectangle.top,
                          state->output_rectangle.width, state->output_rectangle.height);
