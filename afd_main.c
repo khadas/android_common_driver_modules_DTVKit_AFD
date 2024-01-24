@@ -54,7 +54,7 @@ static dev_t aml_afd_devno;
 static struct cdev *aml_afd_cdevp;
 
 
-static char afd_version_str[] = "AFD module: v2022.12.15a";
+static char afd_version_str[] = "AFD module: v2024.03.01b";
 static unsigned int afd_debug_flag;
 static unsigned int afd_debug_value_flag;
 
@@ -123,10 +123,8 @@ static void update_scaling_rect(const char *para) {
         }
         vt_context = vt ? &(vt->vtc) : NULL;
         if (vt_context) {
-            if (scale_type == SCALING_APP) {
+            if (scale_type) {
                 VT_SetAppScaling(vt_context, &rect, res_width, res_height);
-            } else if (scale_type == SCALING_MHEG) {
-                VT_SetMhegScaling(vt_context, &rect, res_width, res_height);
             } else {
                 VT_DisableScalingMode(vt_context);
             }
@@ -170,12 +168,11 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     int ret = AFD_RESULT_ERROR;
     unsigned char afd;
     S_FRAME_DIS_INFO frame_info;
-    int aspect = 0xff;
     VT_NODE_t* vt = NULL;
     S_VT_CONVERSION_STATE* vt_context = NULL;
     S_RECTANGLE crop, disp;
-    unsigned int inst_id;
-    unsigned int vpts;
+    afd_extra_info extra;
+    int h264_field_changed;
 
     struct afd_handle_s *afd_h = (struct afd_handle_s *)handle;
 
@@ -191,8 +188,8 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
         return ret;
     }
 
-    afd = getAfdFromMetaInfo((unsigned char *)in->ud_param, &inst_id, &vpts, afd_debug_flag);
-    vt = find_vtc_inst(inst_id);
+    afd = getAfdFromMetaInfo((unsigned char *)in->ud_param, &extra, afd_debug_flag);
+    vt = find_vtc_inst(extra.inst_id);
     //for old path devices, decoder maybe has no instance info,
     //we will re-try to find path 0 vtc for main path
     if (!vt) {
@@ -210,7 +207,7 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
 
     if (afd_debug_flag) {
         pr_err("[AFD] %s: in inst(%u) with afd(%d) and vpts(%u), context: %p,(%d-%d), video ar(%d,%d), display in(%d,%d,%d,%d)",
-            __func__, inst_id, (afd & 0x0f), vpts, vt, (vt?vt->path:-1), (vt?vt->inst_id:-1),
+            __func__, extra.inst_id, (afd & 0x0f), extra.pts, vt, (vt?vt->path:-1), (vt?vt->inst_id:-1),
             in->video_ar.numerator, in->video_ar.denominator,
             in->disp_info.x_start, in->disp_info.y_start, in->disp_info.x_end, in->disp_info.y_end);
     }
@@ -222,11 +219,40 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
 
     if (!vt_context->afd_enabled && !afd_debug_flag) return ret;
 
-    // call ud param parser
+    // adjust afd from frame info
     if (afd_debug_flag && afd_debug_value_flag != 0xff)
         afd = afd_debug_value_flag;
     else {
+    #if 0
+        h264_field_changed = 0;
+        if (afd == 0xff || afd == 0) afd = vt_context->afd;
+    #else
+        //try to fix afd not changed issue
+        h264_field_changed = (extra.frame_type != FIELD_TOP || vt_context->frame_type == FIELD_TOP);
         if (afd == 0xff) afd = vt_context->afd;
+        else if (afd != vt_context->afd) {
+            if (afd == 0) {
+                //valid afd change to non afd, check poc == 0
+                //for mpeg12, need I frame
+                //for h264, frame or bottom field > top field
+                if (extra.poc != 0) {
+                    afd = vt_context->afd;
+                } else {
+                    if (extra.video_format == VFORMAT_MPEG12) {
+                        if (extra.frame_type != FRAME_I)
+                            afd = vt_context->afd;
+                    } else if (extra.video_format == VFORMAT_H264) {
+                        if (!h264_field_changed)
+                            afd = vt_context->afd;
+                    }
+                }
+            } else if (vt_context->afd != 0) {
+                if (extra.video_format == VFORMAT_H264 && !h264_field_changed) {
+                    afd = vt_context->afd;
+                }
+            }
+        }
+    #endif
     }
     // call afd handle init
     // call afd handle process to get crop and position information.
@@ -234,8 +260,7 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     frame_info.video_height = in->video_h;
     frame_info.screen_width = in->disp_info.x_end - in->disp_info.x_start;
     frame_info.screen_height = in->disp_info.y_end - in->disp_info.y_start;
-    aspect = getAspect(in->video_ar.numerator, in->video_ar.denominator);
-    AFDHandle(vt_context, &frame_info, aspect, afd);
+    AFDHandle(vt_context, &frame_info, in->video_ar.numerator, in->video_ar.denominator, afd, extra.frame_type);
     crop = getInRectangle(vt_context);
     disp = getOutRectangle(vt_context);
 
@@ -249,6 +274,11 @@ static int afd_info_get_wrap(void *handle, struct afd_in_param *in,
     out->dst_pos.x_end = in->disp_info.x_start + disp.left + disp.width;
     out->dst_pos.y_start = in->disp_info.y_start + disp.top;
     out->dst_pos.y_end = in->disp_info.y_start + disp.top + disp.height;
+
+#ifdef ADD_CROP_RATIO_TO_OUT
+    out->dst_ar.numerator = getOutRatio(vt_context).numerator;
+    out->dst_ar.denominator = getOutRatio(vt_context).denominator;
+#endif
 
     ret = AFD_RESULT_OK;
     afd_h->cur_video_ar.denominator = in->video_ar.denominator;
@@ -422,6 +452,26 @@ static ssize_t aspect_mode_store(struct class *cla, struct class_attribute *attr
     return size;
 }
 
+static ssize_t overscan_mode_show(struct class *class, struct class_attribute *attr,
+                          char *buf) {
+    return 0;
+}
+
+static ssize_t overscan_mode_store(struct class *class, struct class_attribute *attr,
+                           const char *buf, size_t size) {
+    unsigned int val;
+    ssize_t ret;
+
+    val = 0;
+    ret = kstrtoint(buf, 0, &val);
+    if (ret != 0) return -EINVAL;
+
+    set_over_scan_mode(val);
+
+    return size;
+}
+
+
 static ssize_t state_show(struct class *cla, struct class_attribute *attr,
                             char *buf) {
     ssize_t size = 0;
@@ -447,6 +497,7 @@ static CLASS_ATTR_RW(value);
 static CLASS_ATTR_RW(enable);
 static CLASS_ATTR_RW(scaling);
 static CLASS_ATTR_RW(aspect_mode);
+static CLASS_ATTR_RW(overscan_mode);
 static CLASS_ATTR_RW(state);
 
 static struct attribute *afd_module_class_attrs[] = {&class_attr_debug.attr,
@@ -454,6 +505,7 @@ static struct attribute *afd_module_class_attrs[] = {&class_attr_debug.attr,
                                                      &class_attr_enable.attr,
                                                      &class_attr_scaling.attr,
                                                      &class_attr_aspect_mode.attr,
+                                                     &class_attr_overscan_mode.attr,
                                                      &class_attr_state.attr,
                                                      NULL};
 
@@ -470,6 +522,7 @@ static struct class_attribute afd_module_class_attrs[] = {
     __ATTR(enable, 0664, enable_show, enable_store),
     __ATTR(scaling, 0664, scaling_show, scaling_store),
     __ATTR(aspect_mode, 0664, aspect_mode_show, aspect_mode_store),
+    __ATTR(overscan_mode, 0664, overscan_mode_show, overscan_mode_store),
     __ATTR(state, 0664, state_show, state_store),
     __ATTR_NULL
 };
@@ -524,10 +577,8 @@ static void try_apply_scaling(struct afd_ctl_scaling_t *s) {
         if (vt) {
             vt_context = vt ? &(vt->vtc) : NULL;
             if (vt_context) {
-                if (s->scaling.type == SCALING_APP) {
+                if (s->scaling.type) {
                     VT_SetAppScaling(vt_context, &rect, s->scaling.resolution_width, s->scaling.resolution_height);
-                } else if (s->scaling.type == SCALING_MHEG) {
-                    VT_SetMhegScaling(vt_context, &rect, s->scaling.resolution_width, s->scaling.resolution_height);
                 } else {
                     VT_DisableScalingMode(vt_context);
                 }
@@ -544,7 +595,7 @@ static void try_apply_overscan(struct afd_ctl_overscan_t * ops) {
         memcpy(&(newOverscan.fhd), &(ops->fhd_overscan), sizeof(S_VT_CROP_t));
         memcpy(&(newOverscan.hd), &(ops->hd_overscan), sizeof(S_VT_CROP_t));
         memcpy(&(newOverscan.sd), &(ops->sd_overscan), sizeof(S_VT_CROP_t));
-        VT_Set_Global_Overscan(&newOverscan);
+        VT_Set_Global_Overscan(OVER_SCAN_FIXED, &newOverscan);
     }
 }
 

@@ -47,6 +47,7 @@ void* find_vtc(int path);
 void* find_vtc_inst(int inst_id);
 void* find_vtc_inst_by_handle(void * handle);
 void apply_aspect(int mode);
+void set_over_scan_mode(int mode);
 unsigned int  get_vtc_paths(int* array, unsigned int size);
 
 void print_afd_value(char *buf, int count, int debug_val);

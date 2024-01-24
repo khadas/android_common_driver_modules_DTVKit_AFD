@@ -29,13 +29,14 @@ static VT_CONTEXTS_t mVtContexts;
 
 void init_vt_context(void) {
     int i;
+    int overscan_mode;
     S_VT_OVERSCANS_t defaultOverscan;
 
     mVtContexts.mAspectMode = ASPECT_MODE_CUSTOM;
     for (i = 0; i < MAX_PLAYER_INSTANCES; i ++) {
         mVtContexts.vs[i].path = -1;
         mVtContexts.vs[i].inst_id = -1;
-        VT_Rest(&(mVtContexts.vs[i].vtc));
+        VT_Reset(&(mVtContexts.vs[i].vtc));
         mVtContexts.vs[i].handle = NULL;
     }
 
@@ -55,7 +56,13 @@ void init_vt_context(void) {
     defaultOverscan.sd.vs = SD_OVERSCAN_V;
     defaultOverscan.sd.re = SD_OVERSCAN_H;
     defaultOverscan.sd.be = SD_OVERSCAN_V;
-    VT_Set_Global_Overscan(&defaultOverscan);
+
+    #ifdef ENABLE_INTERNAL_OVERSCAN
+        overscan_mode = OVER_SCAN_AUTO;
+    #else
+        overscan_mode = OVER_SCAN_OFF;
+    #endif
+    VT_Set_Global_Overscan(overscan_mode, &defaultOverscan);
 }
 
 void* create_vtc(int path) {
@@ -69,7 +76,7 @@ void* create_vtc(int path) {
             mVtContexts.vs[i].path = path;
             mVtContexts.vs[i].inst_id = 0;
             mVtContexts.vs[i].handle = NULL;
-            VT_Rest(&(mVtContexts.vs[i].vtc));
+            VT_Reset(&(mVtContexts.vs[i].vtc));
             VT_SetVideoAlignmentPref(&(mVtContexts.vs[i].vtc), mVtContexts.mAspectMode);
             return &(mVtContexts.vs[i]);
         }
@@ -124,7 +131,7 @@ int release_vtc(int path) {
             mVtContexts.vs[i].path = -1;
             mVtContexts.vs[i].inst_id = -1;
             mVtContexts.vs[i].handle = NULL;
-            VT_Rest(&(mVtContexts.vs[i].vtc));
+            VT_Reset(&(mVtContexts.vs[i].vtc));
             return path;
         }
     }
@@ -138,6 +145,20 @@ void apply_aspect(int mode) {
     for (i = 0; i < MAX_PLAYER_INSTANCES; i ++) {
         if (mVtContexts.vs[i].path != -1) {
             VT_SetVideoAlignmentPref(&(mVtContexts.vs[i].vtc), mVtContexts.mAspectMode);
+        }
+    }
+}
+
+void set_over_scan_mode(int mode) {
+    int i;
+
+    if (mode >= OVER_SCAN_OFF && mode <= OVER_SCAN_FIXED) {
+        VT_Set_Global_Overscan((E_OVER_SCAN_MODE)mode, NULL);
+
+        for (i = 0; i < MAX_PLAYER_INSTANCES; i ++) {
+            if (mVtContexts.vs[i].path != -1) {
+                mVtContexts.vs[i].vtc.settings_changed = 1;
+            }
         }
     }
 }

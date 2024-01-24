@@ -41,10 +41,10 @@
 //1))
 
 #define IS_AFD(p) \
-    ((p[12] == 0x31) && (p[13] == 0x47) && (p[14] == 0x54) && (p[15] == 0x44))
+    ((p[11] == 0x41) && (p[12] == 0x31) && (p[13] == 0x47) && (p[14] == 0x54) && (p[15] == 0x44))
 #define IS_H264_AFD(p)                                                       \
     ((p[1] == 0x31) && (p[2] == 0x47) && (p[3] == 0x54) && (p[4] == 0x44) && \
-     (p[7] == 0xb5))
+     (p[7] == 0xb5) && (p[0] == 0x41))
 
 enum AM_USERDATA_Mode {
     AM_USERDATA_MODE_CC = 0x1,
@@ -169,38 +169,28 @@ struct userdata_param_t {
     struct userdata_meta_info_t meta_info; /*output*/
 };
 
-typedef struct {
-    uint32_t picture_structure : 16;
-    uint32_t temporal_reference : 10;
-    uint32_t picture_coding_type : 3;
-    uint32_t reserved : 3;
-    uint32_t index : 16;
-    uint32_t offset : 16;
-    uint8_t atsc_flag[4];
-    uint8_t cc_data_start[4];
-} aml_ud_header_t;
+typedef enum {
+    FRAME_UNKNOWN,
+    FRAME_I,
+    FRAME_P,
+    FRAME_B,
+    FRAME_TYPE_MPEG_NUM,
+    FIELD_FRAME = FRAME_TYPE_MPEG_NUM,
+    FIELD_TOP,
+    FIELD_BOT,
+    FIELD_TB_FRAME,
+}e_frame_type;
 
 typedef struct {
-    uint8_t : 6;
-    uint8_t af_flag : 1;
-    uint8_t : 1;
-    uint8_t af : 4;
-    uint8_t : 4;
-    uint16_t reserved;
+    uint32_t inst_id;
     uint32_t pts;
-} AM_USERDATA_AFD_t;
-
-struct CCData {
-    uint8_t *buf;
-    uint32_t pts;
-    uint32_t duration;
-    int32_t pts_valid;
-    int32_t size;
-    int32_t poc;
-};
+    uint32_t poc;
+    uint16_t video_format;
+    uint16_t frame_type;
+} afd_extra_info;
 
 //static void aml_swap_data(uint8_t *user_data, int ud_size);
-uint8_t processData(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug);
+uint8_t processData(uint8_t *rawData, afd_extra_info *extra, uint32_t debug);
 userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len);
 
 /*!**************************************************************************
@@ -210,6 +200,6 @@ userdata_type checkFormat(struct userdata_param_t *ud, uint8_t *buf, int len);
  * @Param    vpts    - pointer to store vpts
  * @return afd value ,if return 255 , means can't get afd value
  ****************************************************************************/
-uint8_t getAfdFromMetaInfo(uint8_t *rawData, uint32_t *inst_id, uint32_t *vpts, uint32_t debug);
+uint8_t getAfdFromMetaInfo(uint8_t *rawData, afd_extra_info *extra, uint32_t debug);
 
 #endif  // AMCODEC_USERDATA_DEVICE_H
